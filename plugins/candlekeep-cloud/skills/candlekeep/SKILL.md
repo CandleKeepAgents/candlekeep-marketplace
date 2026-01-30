@@ -1,11 +1,46 @@
 ---
 name: candlekeep
-description: Access your CandleKeep Cloud document library. When users ask questions that might be answered by their documents, launch the item-reader subagent. For library management (list, add, remove), use CLI directly.
+description: Research, read, refer to, or look up information from your personal document library. Use when the user asks to research a topic, read about something, refer to their documents, look up information, find details, check their books/PDFs, consult their library, or any question that might be answered by their uploaded documents. Launch item-reader subagent for all research questions.
 ---
 
 # CandleKeep Cloud - Document Library for AI Agents
 
 Access and search your CandleKeep Cloud document library to answer questions with citations from your uploaded PDFs.
+
+## PROACTIVE RESEARCH TRIGGERING
+
+**IMPORTANT**: This skill should be automatically invoked when users mention ANY of these keywords or patterns:
+
+### Trigger Keywords (auto-invoke this skill)
+- **Research words**: "research", "investigate", "study", "explore", "dig into"
+- **Reading words**: "read", "read about", "what does it say", "tell me about"
+- **Reference words**: "refer", "refer to", "reference", "consult", "check"
+- **Lookup words**: "look up", "look into", "find", "search for", "search my"
+- **Library words**: "my documents", "my library", "my books", "my PDFs", "my files"
+- **Knowledge words**: "according to", "based on", "what do my", "does my library"
+
+### Trigger Patterns (auto-invoke this skill)
+- "What does X say about..."
+- "Can you research..."
+- "Look up Y in my documents"
+- "Refer to my library for..."
+- "Read about Z from my books"
+- "Find information about..."
+- "Check my documents for..."
+- "According to my library..."
+- "What do my books/PDFs/documents say about..."
+- "Research X using my documents"
+- "Is there anything in my library about..."
+- "Consult my files about..."
+
+### Auto-Trigger Scenarios
+Launch the item-reader subagent automatically when:
+1. User asks a factual question that could be in their documents
+2. User mentions needing to "research", "read", or "refer" to something
+3. User asks "what do my documents say about..."
+4. User wants to "look up" or "find" information
+5. User asks a question and has CandleKeep documents available
+6. User mentions their "library", "books", "PDFs", or "documents"
 
 ## CRITICAL: MANDATORY SUBAGENT USAGE
 
@@ -20,8 +55,14 @@ When answering questions that might be in the user's document library:
 ```
 User request
     │
-    ├── Research question about document content
-    │   └── Launch item-reader subagent (Task tool)
+    ├── Contains research keywords (research, read, refer, look up, find, etc.)
+    │   └── Launch item-reader subagent (Task tool) - AUTOMATIC
+    │
+    ├── Question that might be answered by documents
+    │   └── Launch item-reader subagent (Task tool) - AUTOMATIC
+    │
+    ├── Mentions "my library", "my documents", "my books", "my PDFs"
+    │   └── Launch item-reader subagent (Task tool) - AUTOMATIC
     │
     ├── "What documents do I have?" / "List my library"
     │   └── Run: ck items list
@@ -35,6 +76,17 @@ User request
     └── "Check my CandleKeep auth status"
         └── Run: ck auth whoami
 ```
+
+## Launching the Research Agent
+
+When ANY trigger keyword or pattern is detected, immediately launch the item-reader agent:
+
+```
+Task tool with subagent_type: "candlekeep-cloud:item-reader"
+prompt: "Research the user's question: [question here]"
+```
+
+**DO NOT HESITATE** - if the user's request contains research-related keywords, launch the subagent. It's better to check the library and find nothing than to miss answering a question the user's documents could answer.
 
 ## Prerequisites Check
 
@@ -91,31 +143,32 @@ ck auth logout && ck auth login
 | `ck auth login` | Authenticate with CandleKeep Cloud |
 | `ck auth logout` | Log out of CandleKeep Cloud |
 
-## Launching the Research Agent
-
-When a user asks a question that might be answered by their documents, launch the item-reader agent:
-
-```
-Task tool with subagent_type: "candlekeep-cloud:item-reader"
-prompt: "Research the user's question: [question here]"
-```
-
-Example triggers for launching item-reader:
-- "What does my library say about X?"
-- "Research Y using my documents"
-- "Find information about Z in my PDFs"
-- "Can you look up A in my CandleKeep?"
-- "Check my books for information on B"
-
 ## Example Workflow
 
 **User asks:** "What do my books say about machine learning?"
 
 **Correct response:**
-1. Launch item-reader subagent with the research question
-2. Let the subagent handle searching, reading, and citing
-3. Present the subagent's findings to the user
+1. Recognize "my books" and "say about" as trigger patterns
+2. Immediately launch item-reader subagent with the research question
+3. Let the subagent handle searching, reading, and citing
+4. Present the subagent's findings to the user
 
-**Incorrect response:**
+**User asks:** "Research neural networks for me"
+
+**Correct response:**
+1. Recognize "research" as a trigger keyword
+2. Immediately launch item-reader subagent
+3. Present findings with citations
+
+**User asks:** "Can you look up information about databases?"
+
+**Correct response:**
+1. Recognize "look up" as a trigger keyword
+2. Launch item-reader subagent automatically
+3. Report findings from the user's document library
+
+**Incorrect responses:**
 - Running `ck items read` directly without using the subagent
+- Asking if the user wants to search their library (just do it!)
 - Trying to manually piece together research without proper workflow
+- Not recognizing trigger keywords and missing an opportunity to help
