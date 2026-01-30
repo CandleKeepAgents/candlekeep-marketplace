@@ -1,11 +1,11 @@
 ---
 name: candlekeep
-description: Research, read, refer to, or look up information from your personal document library. Use when the user asks to research a topic, read about something, refer to their documents, look up information, find details, check their books/PDFs, consult their library, or any question that might be answered by their uploaded documents. Launch item-reader subagent for all research questions.
+description: Research, read, refer to, or look up information from your personal document library. Use when the user asks to research a topic, read about something, refer to their documents, look up information, find details, check their books/PDFs/markdown files, consult their library, or any question that might be answered by their uploaded documents. Launch item-reader subagent for all research questions.
 ---
 
 # CandleKeep Cloud - Document Library for AI Agents
 
-Access and search your CandleKeep Cloud document library to answer questions with citations from your uploaded PDFs.
+Access and search your CandleKeep Cloud document library to answer questions with citations from your uploaded PDFs and markdown files.
 
 ## PROACTIVE RESEARCH TRIGGERING
 
@@ -16,7 +16,7 @@ Access and search your CandleKeep Cloud document library to answer questions wit
 - **Reading words**: "read", "read about", "what does it say", "tell me about"
 - **Reference words**: "refer", "refer to", "reference", "consult", "check"
 - **Lookup words**: "look up", "look into", "find", "search for", "search my"
-- **Library words**: "my documents", "my library", "my books", "my PDFs", "my files"
+- **Library words**: "my documents", "my library", "my books", "my PDFs", "my markdown", "my files"
 - **Knowledge words**: "according to", "based on", "what do my", "does my library"
 
 ### Trigger Patterns (auto-invoke this skill)
@@ -67,7 +67,7 @@ User request
     ├── "What documents do I have?" / "List my library"
     │   └── Run: ck items list
     │
-    ├── "Add this PDF to my library"
+    ├── "Add this PDF/markdown to my library"
     │   └── Run: ck items add <path>
     │
     ├── "Remove document X"
@@ -137,7 +137,7 @@ ck auth logout && ck auth login
 |---------|---------|
 | `ck items list` | List all documents in the library |
 | `ck items list --json` | List documents with full metadata |
-| `ck items add <file>` | Upload a PDF to the library |
+| `ck items add <file>` | Upload a PDF or Markdown file to the library |
 | `ck items remove <ids> --yes` | Delete documents (comma-separated IDs) |
 | `ck auth whoami` | Check authentication status |
 | `ck auth login` | Authenticate with CandleKeep Cloud |

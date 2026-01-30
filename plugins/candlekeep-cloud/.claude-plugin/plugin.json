@@ -1,7 +1,7 @@
 {
   "name": "candlekeep-cloud",
   "version": "1.1.0",
-  "description": "AI agent access to your CandleKeep Cloud document library. Research questions using your uploaded PDFs with citations.",
+  "description": "AI agent access to your CandleKeep Cloud document library. Research questions using your uploaded PDFs and markdown files with citations.",
   "author": {
     "name": "CandleKeep",
     "email": "support@getcandlekeep.com"
@@ -11,6 +11,7 @@
     "knowledge-base",
     "documents",
     "pdf",
+    "markdown",
     "library",
     "research",
     "citations",
