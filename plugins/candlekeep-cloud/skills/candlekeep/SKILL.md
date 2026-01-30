@@ -59,6 +59,26 @@ brew install candlekeep-cli
 cargo install candlekeep-cli
 ```
 
+## Handling Authentication Errors
+
+If you encounter `Authentication failed: Invalid or revoked API key` errors:
+
+1. **Don't just tell the user to login** - proactively fix it
+2. Run logout first, then login (the CLI won't re-auth if it thinks you're logged in):
+
+```bash
+ck auth logout && ck auth login
+```
+
+3. This will open the browser for the user to authenticate
+4. Wait for the auth flow to complete (use a longer timeout ~120s)
+5. Then retry the original command
+
+**Common error patterns:**
+- `Invalid or revoked API key` → Run `ck auth logout && ck auth login`
+- `Not authenticated` → Run `ck auth login`
+- `CLI not found` → Guide user to install via Homebrew or Cargo
+
 ## CLI Commands Reference (Library Management Only)
 
 | Command | Purpose |
