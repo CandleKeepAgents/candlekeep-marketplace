@@ -5,6 +5,22 @@ All notable changes to the CandleKeep Cloud plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-02-04
+
+### Added
+- **Book Writer Agent** - New `book-writer` subagent for creating and editing markdown documents
+  - Create new markdown documents with `ck items create`
+  - Retrieve content with `ck items get`
+  - Update content with `ck items put`
+  - Full support for markdown editing workflow
+- **Writing Trigger Keywords** - Skill now triggers for writing-related requests
+  - "write", "draft", "create document", "start writing", "compose"
+  - "take notes", "write notes", "document this", "capture"
+
+### Changed
+- Candlekeep skill description updated to mention writing capabilities
+- Decision tree updated with book-writer launch path
+
 ## [1.4.1] - 2026-02-03
 
 ### Added
