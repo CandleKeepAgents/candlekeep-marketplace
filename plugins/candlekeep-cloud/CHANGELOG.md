@@ -5,6 +5,20 @@ All notable changes to the CandleKeep Cloud plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-02-03
+
+### Added
+- **Book Enricher Agent** - New `book-enricher` subagent that automatically enriches books with missing metadata
+  - Reads first 5-10 pages to extract title, author, and description
+  - Submits enrichments with confidence scores (0.0-1.0)
+  - Processes items from the enrichment queue prioritized by page count
+- **Metadata Flagging** - item-reader now flags books with poor metadata during research
+  - Detects filename-like titles (e.g., "document.pdf", "scan_001.pdf")
+  - Uses `ck items flag <id>` to queue items for enrichment
+
+### Changed
+- item-reader updated with metadata flagging guidance
+
 ## [1.2.0] - 2025-01-30
 
 ### Changed

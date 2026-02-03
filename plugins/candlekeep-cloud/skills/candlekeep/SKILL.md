@@ -49,6 +49,22 @@ When answering questions that might be in the user's document library:
 1. **ALWAYS** launch the `item-reader` subagent using the Task tool
 2. **NEVER** run `ck items read` commands directly for research questions
 3. The subagent handles the full research workflow with proper citations
+4. **ALSO** launch the `book-enricher` subagent in parallel to opportunistically improve library metadata
+
+### Parallel Agent Launch
+
+For research requests, spawn BOTH agents simultaneously in a single message:
+
+```
+Task tool calls (in parallel):
+1. subagent_type: "candlekeep-cloud:item-reader"
+   prompt: "Research the user's question: [question here]"
+
+2. subagent_type: "candlekeep-cloud:book-enricher"
+   prompt: "Enrich any books in the library that need metadata improvements."
+```
+
+The `item-reader` agent handles the user's research request while `book-enricher` opportunistically improves 1-2 books' metadata in the background.
 
 ## Decision Tree
 
@@ -77,16 +93,21 @@ User request
         └── Run: ck auth whoami
 ```
 
-## Launching the Research Agent
+## Launching the Research Agents
 
-When ANY trigger keyword or pattern is detected, immediately launch the item-reader agent:
+When ANY trigger keyword or pattern is detected, immediately launch BOTH agents in parallel:
 
 ```
-Task tool with subagent_type: "candlekeep-cloud:item-reader"
-prompt: "Research the user's question: [question here]"
+Task tool calls (in a single message with multiple tool uses):
+
+1. subagent_type: "candlekeep-cloud:item-reader"
+   prompt: "Research the user's question: [question here]"
+
+2. subagent_type: "candlekeep-cloud:book-enricher"
+   prompt: "Enrich any books in the library that need metadata improvements."
 ```
 
-**DO NOT HESITATE** - if the user's request contains research-related keywords, launch the subagent. It's better to check the library and find nothing than to miss answering a question the user's documents could answer.
+**DO NOT HESITATE** - if the user's request contains research-related keywords, launch both subagents. The item-reader handles research while book-enricher opportunistically improves library quality in parallel.
 
 ## Prerequisites Check
 
@@ -149,22 +170,24 @@ ck auth logout && ck auth login
 
 **Correct response:**
 1. Recognize "my books" and "say about" as trigger patterns
-2. Immediately launch item-reader subagent with the research question
-3. Let the subagent handle searching, reading, and citing
-4. Present the subagent's findings to the user
+2. Immediately launch BOTH subagents in parallel:
+   - `item-reader`: Research the user's question about machine learning
+   - `book-enricher`: Enrich any books needing metadata
+3. Present the item-reader's findings to the user
+4. Optionally mention any books that were enriched
 
 **User asks:** "Research neural networks for me"
 
 **Correct response:**
 1. Recognize "research" as a trigger keyword
-2. Immediately launch item-reader subagent
+2. Immediately launch both item-reader and book-enricher subagents in parallel
 3. Present findings with citations
 
 **User asks:** "Can you look up information about databases?"
 
 **Correct response:**
 1. Recognize "look up" as a trigger keyword
-2. Launch item-reader subagent automatically
+2. Launch both subagents automatically in parallel
 3. Report findings from the user's document library
 
 **Incorrect responses:**
@@ -172,3 +195,4 @@ ck auth logout && ck auth login
 - Asking if the user wants to search their library (just do it!)
 - Trying to manually piece together research without proper workflow
 - Not recognizing trigger keywords and missing an opportunity to help
+- Only launching item-reader without book-enricher (miss enrichment opportunity)

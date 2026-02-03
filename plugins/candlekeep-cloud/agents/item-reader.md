@@ -146,6 +146,23 @@ Provide answer with citations from the read content.
 3. **Cross-reference when possible** - Compare multiple documents on the same topic
 4. **Acknowledge limitations** - If the library doesn't cover a topic, say so
 5. **Quote accurately** - Use exact quotes when the wording matters
+6. **Flag poor metadata** - When you encounter books with missing or poor metadata, flag them for enrichment
+
+## Flagging Poor Metadata
+
+While performing research, if you encounter a book with:
+- Title that looks like a filename (e.g., "document.pdf", "scan_001.pdf", "book1.pdf")
+- Missing author information
+- Missing or generic description
+- Title that doesn't match the actual content
+
+Flag it for enrichment:
+
+```bash
+ck items flag <id>
+```
+
+This helps the book-enricher agent know which items need attention. You don't need to stop your research - just flag and continue.
 
 ## Error Handling
 
