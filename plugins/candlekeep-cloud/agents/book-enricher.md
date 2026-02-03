@@ -72,15 +72,53 @@ ck items enrich <id> \
 - `level: 2` = Section (subdivisions of chapters)
 - `level: 3` = Subsection (deeper divisions, optional)
 
-### Page Numbers
-- Use **PDF page numbers**, not printed page numbers
-- PDF pages often differ from printed pages due to front matter
-- If TOC says "Chapter 1... 15" but it's on PDF page 25, use page 25
+### Page Numbers - CRITICAL
+- Use **PDF page numbers**, NOT printed page numbers
+- PDF pages often differ from printed pages due to front matter (cover, title page, etc.)
+- The printed "Page 1" might be PDF page 5 or higher
+
+### Determining PDF Page Offset
+
+Before extracting TOC, determine the page offset:
+
+1. **Find a printed page number** in the content:
+```bash
+ck items read "<id>" 10 10
+```
+Look for a page number printed on the page (e.g., "Page 8" or just "8" in footer/header)
+
+2. **Calculate the offset**:
+   - If PDF page 10 shows printed page "8", offset = 10 - 8 = 2
+   - Add this offset to all TOC page numbers
+
+3. **Verify the offset** by spot-checking:
+```bash
+ck items read "<id>" <calculated-pdf-page> <calculated-pdf-page>
+```
+Confirm the chapter heading appears where expected.
+
+### TOC Verification - MANDATORY
+
+**Before submitting any TOC, you MUST verify at least 3 entries:**
+
+1. **First entry** - Check the Introduction/Chapter 1 starts on the listed page
+2. **Middle entry** - Spot-check a chapter in the middle of the book
+3. **Last entry** - Verify an appendix or final chapter
+
+For each verification:
+```bash
+ck items read "<id>" <page> <page>
+```
+
+**Only submit TOC if all verified entries are correct.** If any page is off:
+- Recalculate the offset
+- Adjust all page numbers
+- Re-verify before submitting
 
 ### TOC JSON Format
 ```json
 [
-  {"title": "Introduction", "page": 1, "level": 1},
+  {"title": "Introduction", "page": 5, "level": 1},
   {"title": "Chapter 1: Getting Started", "page": 15, "level": 1},
   {"title": "1.1 Overview", "page": 16, "level": 2},
   {"title": "1.2 Setup", "page": 20, "level": 2},
@@ -92,6 +130,7 @@ ck items enrich <id> \
 - Item already has a good TOC (5+ entries with correct pages)
 - Book has no clear chapter structure (e.g., novels, short documents)
 - Cannot determine page numbers reliably
+- Verification fails and offset cannot be determined
 
 ## Confidence Guidelines
 

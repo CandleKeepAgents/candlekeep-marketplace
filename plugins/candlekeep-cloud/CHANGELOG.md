@@ -5,6 +5,19 @@ All notable changes to the CandleKeep Cloud plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-02-03
+
+### Added
+- **TOC Verification Requirement** - Book enricher must verify TOC page numbers before submitting
+  - Determine PDF page offset vs printed page numbers
+  - Verify at least 3 TOC entries by reading actual pages
+  - Only submit TOC if verified entries match content
+- **Enrichment Quality Guidelines** in candlekeep skill explaining why TOC accuracy matters
+
+### Changed
+- Book enricher TOC Guidelines expanded with mandatory verification steps
+- Candlekeep skill updated with enrichment quality section
+
 ## [1.4.0] - 2026-02-03
 
 ### Added

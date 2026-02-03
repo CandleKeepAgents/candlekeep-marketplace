@@ -109,6 +109,30 @@ Task tool calls (in a single message with multiple tool uses):
 
 **DO NOT HESITATE** - if the user's request contains research-related keywords, launch both subagents. The item-reader handles research while book-enricher opportunistically improves library quality in parallel.
 
+## Enrichment Quality Guidelines
+
+The `book-enricher` agent must follow these rules to ensure accurate metadata:
+
+### TOC Accuracy is Critical
+
+TOC page numbers must be **PDF page numbers**, not printed page numbers. Before submitting any TOC:
+
+1. **Determine the page offset** between PDF pages and printed pages
+2. **Verify at least 3 TOC entries** by reading those pages and confirming the chapter starts there
+3. **Only submit if verified** - wrong page numbers make retrieval unreliable
+
+### Why This Matters
+
+When users ask "What does Chapter 5 say about X?", the system uses TOC page numbers to find the right content. If the TOC says Chapter 5 starts on page 50 but it's actually on page 55, retrieval will return the wrong content.
+
+### Verification Command
+
+```bash
+ck items read "<id>" <page> <page>
+```
+
+Check that the chapter heading appears at the top of the returned content.
+
 ## Prerequisites Check
 
 Before first use, verify the CLI is installed and authenticated:
