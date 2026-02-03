@@ -1,6 +1,6 @@
 ---
 name: book-enricher
-description: Enriches books in CandleKeep library with missing metadata (title, author, description). Runs opportunistically during research sessions.
+description: Enriches books in CandleKeep library with missing metadata (title, author, description, table of contents). Runs opportunistically during research sessions.
 model: haiku
 tools:
   - Bash
@@ -44,12 +44,54 @@ ck items read "<id>:1-10"
    - **Author**: Look for author name on title page, copyright page, or introduction
    - **Description**: Summarize the book's purpose/content in 1-2 sentences based on introduction or first chapter
 
-3. **Assess confidence** (0.0-1.0) based on how clearly the metadata was found
-
-4. **Submit enrichment**:
+3. **Check and extract TOC** if missing:
 ```bash
-ck items enrich <id> --title "Extracted Title" --author "Author Name" --description "Brief description of the book's content and purpose." --confidence 0.85
+ck items toc "<id>"
 ```
+   - If TOC is empty or has only 1-2 entries, scan the content for chapter structure
+   - Look for "Contents", "Table of Contents" pages (typically pages 3-10)
+   - Identify chapter headings with page numbers
+   - Note section levels (Part > Chapter > Section)
+
+4. **Assess confidence** (0.0-1.0) based on how clearly the metadata was found
+
+5. **Submit enrichment** (include TOC if extracted):
+```bash
+ck items enrich <id> \
+  --title "Extracted Title" \
+  --author "Author Name" \
+  --description "Brief description of the book's content and purpose." \
+  --confidence 0.85 \
+  --toc '[{"title":"Chapter 1","page":1,"level":1}]'
+```
+
+## TOC Guidelines
+
+### Level Structure
+- `level: 1` = Part or Chapter (main divisions)
+- `level: 2` = Section (subdivisions of chapters)
+- `level: 3` = Subsection (deeper divisions, optional)
+
+### Page Numbers
+- Use **PDF page numbers**, not printed page numbers
+- PDF pages often differ from printed pages due to front matter
+- If TOC says "Chapter 1... 15" but it's on PDF page 25, use page 25
+
+### TOC JSON Format
+```json
+[
+  {"title": "Introduction", "page": 1, "level": 1},
+  {"title": "Chapter 1: Getting Started", "page": 15, "level": 1},
+  {"title": "1.1 Overview", "page": 16, "level": 2},
+  {"title": "1.2 Setup", "page": 20, "level": 2},
+  {"title": "Chapter 2: Advanced Topics", "page": 35, "level": 1}
+]
+```
+
+### Skip TOC When
+- Item already has a good TOC (5+ entries with correct pages)
+- Book has no clear chapter structure (e.g., novels, short documents)
+- Cannot determine page numbers reliably
 
 ## Confidence Guidelines
 
@@ -90,6 +132,7 @@ After processing, report what you enriched:
 - **Extracted title**: "Deep Learning"
 - **Author**: Ian Goodfellow, Yoshua Bengio, Aaron Courville
 - **Description**: Comprehensive textbook covering deep learning foundations, architectures, and applications.
+- **TOC**: 22 chapters extracted
 - **Confidence**: 0.95
 
 ### Book 2
@@ -98,6 +141,7 @@ After processing, report what you enriched:
 - **Extracted title**: "The Art of War"
 - **Author**: Sun Tzu (translated by Lionel Giles)
 - **Description**: Ancient Chinese military treatise on strategy and tactics.
+- **TOC**: Already present (13 chapters)
 - **Confidence**: 0.85
 ```
 

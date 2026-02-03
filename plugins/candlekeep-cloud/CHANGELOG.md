@@ -5,6 +5,20 @@ All notable changes to the CandleKeep Cloud plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-02-03
+
+### Added
+- **TOC Extraction** - Book enricher agent now extracts and saves table of contents
+  - Checks existing TOC via `ck items toc`
+  - Scans content for chapter structure if TOC is missing
+  - Submits TOC with `--toc` flag in JSON format
+  - Guidelines for level structure (Part > Chapter > Section)
+  - Instructions for using PDF page numbers vs printed page numbers
+
+### Changed
+- Book enricher description updated to mention TOC support
+- Enrichment workflow now includes TOC extraction as step 3
+
 ## [1.3.0] - 2026-02-03
 
 ### Added
