@@ -30,6 +30,18 @@ This returns document metadata including:
 - `author` - Document author (if available)
 - `page_count` - Total pages
 
+### Step 1.5: Check Saved Sources
+
+Also check if the user has saved sources (e.g. tweets) that contain relevant information:
+
+```bash
+ck sources list --json
+```
+
+- When researching, check if saved sources contain relevant info alongside documents
+- Include relevant sources in findings with citation: `— @handle, saved tweet`
+- If the user seems unaware they have saved sources, flag their existence
+
 ### Step 2: Identify Relevant Documents
 
 Based on the user's question, identify which documents are likely to contain relevant information by examining:
@@ -163,6 +175,24 @@ ck items flag <id>
 ```
 
 This helps the book-enricher agent know which items need attention. You don't need to stop your research - just flag and continue.
+
+## Source Review Mode
+
+When the user specifically asks about their sources (saved tweets, saved sources):
+
+1. List sources with `ck sources list --json`
+2. Summarize themes and clusters across sources
+3. Suggest which sources could become a curated document
+4. Recommend an organizing approach (e.g., group by topic, chronological, by author)
+
+**Example output:**
+
+> You have 12 saved sources. Here are the main themes:
+> - **AI/ML** (5 sources) - Tweets from @karpathy, @ylecun about LLM training
+> - **Rust** (4 sources) - Threads from @jonhoo, @dtolnay on async patterns
+> - **Productivity** (3 sources) - Tips from @sahilbloom, @naval
+>
+> I'd recommend turning the AI/ML cluster into a curated document — there's enough material for a solid overview.
 
 ## Error Handling
 

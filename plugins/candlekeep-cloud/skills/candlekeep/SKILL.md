@@ -25,6 +25,10 @@ Access and search your CandleKeep Cloud document library to answer questions wit
 - **Editing words**: "edit", "update", "revise", "modify", "change", "rewrite"
 - **Structure words**: "add chapter", "new section", "reorganize", "restructure"
 
+### Source Trigger Keywords (launch item-reader for review, book-writer for curation)
+- **Source words**: "sources", "saved tweets", "my tweets", "what have I saved", "saved sources"
+- **Curation words**: "curate", "organize my sources", "turn sources into", "create from sources"
+
 ### Research Trigger Patterns (launch item-reader)
 - "What does X say about..."
 - "Can you research..."
@@ -99,6 +103,10 @@ User request
     │
     ├── Contains WRITING keywords (write, create, edit, update, chapter, book)
     │   └── Launch book-writer subagent (Task tool) - AUTOMATIC
+    │
+    ├── Contains SOURCE keywords (sources, tweets, saved, curate)
+    │   ├── Research/review context → Launch item-reader (which now checks sources too)
+    │   └── "Create/curate/organize from sources" → Launch book-writer with source context
     │
     ├── Question that might be answered by documents
     │   └── Launch item-reader subagent (Task tool) - AUTOMATIC
@@ -238,6 +246,14 @@ ck auth logout && ck auth login
 | `ck items put <id> --file path.md` | Replace document content from file |
 | `echo "content" \| ck items put <id>` | Replace document content from stdin |
 
+### Source Management
+
+| Command | Purpose |
+|---------|---------|
+| `ck sources list --json` | List all saved sources |
+| `ck sources list` | List sources in table format |
+| `ck sources delete <ids> --yes` | Delete sources by ID |
+
 ### Authentication
 
 | Command | Purpose |
@@ -245,6 +261,18 @@ ck auth logout && ck auth login
 | `ck auth whoami` | Check authentication status |
 | `ck auth login` | Authenticate with CandleKeep Cloud |
 | `ck auth logout` | Log out of CandleKeep Cloud |
+
+## Source Curation Workflow
+
+When a user wants to turn saved sources into a curated document:
+
+1. Launch `item-reader` to review sources and find themes
+2. Launch `book-writer` to create a curated document from those sources
+
+**Example:** "Turn my saved tweets about AI into a document"
+
+1. `item-reader` runs `ck sources list --json`, clusters by topic, identifies themes
+2. `book-writer` receives the themes and creates a synthesized markdown document with citations
 
 ## Example Workflow
 
