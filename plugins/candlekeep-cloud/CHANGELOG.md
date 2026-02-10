@@ -5,6 +5,27 @@ All notable changes to the CandleKeep Cloud plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-02-05
+
+### Added
+- **Source Awareness** - All agents now check saved sources (tweets) during research
+  - item-reader checks `ck sources list --json` alongside document library
+  - Sources cited with `@handle` attribution
+  - Source review mode for exploring saved sources
+- **Source Curation Workflow** - Turn saved sources into curated documents
+  - book-writer can synthesize sources into organized markdown documents
+  - Grouping by theme with proper citations
+- **Source Management CLI Commands** - New commands in skill reference
+  - `ck sources list` / `ck sources list --json`
+  - `ck sources delete <ids> --yes`
+- **Source Trigger Keywords** - Skill triggers on source-related terms
+  - "sources", "saved tweets", "my tweets", "curate", "organize sources"
+
+### Changed
+- Decision tree updated with source-aware paths
+- item-reader workflow expanded with Step 1.5 for sources
+- book-writer gains Workflow E for source curation
+
 ## [1.5.0] - 2026-02-04
 
 ### Added

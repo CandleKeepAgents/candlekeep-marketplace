@@ -154,6 +154,40 @@ Content for chapter 2...
 3. Write chapter content
 4. Upload updated document
 
+### Workflow E: Create from Sources
+
+When creating a document from saved sources (tweets, links):
+
+1. Get sources: `ck sources list --json`
+2. Group related sources by theme
+3. Create a markdown document synthesizing the sources
+4. Cite each source with `@handle` and URL
+5. Create the document: `ck items create "Curated: [Topic]"`
+6. Write content to `/tmp/book-<id>.md`
+7. Upload: `ck items put <id> --file /tmp/book-<id>.md`
+
+**Example structure for a curated document:**
+
+```markdown
+# Curated: AI/ML Insights
+
+A collection of insights curated from saved sources.
+
+## Training Large Language Models
+
+Key takeaways from recent discussions:
+
+- "Scaling laws continue to hold..." — @karpathy
+  Source: https://x.com/karpathy/status/...
+
+- "The bitter lesson applies here too..." — @ylecun
+  Source: https://x.com/ylecun/status/...
+
+## Fine-Tuning Best Practices
+
+...
+```
+
 ## Working with the User
 
 ### Before Starting
