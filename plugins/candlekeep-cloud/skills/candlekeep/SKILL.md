@@ -1,6 +1,6 @@
 ---
 name: candlekeep
-description: Research, read, write, or edit documents in your personal library. Use for research questions (launch item-reader), book writing/editing (launch book-writer), or library management. Trigger on research keywords (research, read, look up) OR writing keywords (write, create, edit, book, chapter).
+description: Search your CandleKeep document library for answers with citations, write and edit books, and curate saved sources into new documents. Trigger on research keywords (research, read, look up) OR writing keywords (write, create, edit, book, chapter).
 ---
 
 # CandleKeep Cloud - Document Library for AI Agents
@@ -52,6 +52,15 @@ Access and search your CandleKeep Cloud document library to answer questions wit
 - "Update the chapter on..."
 - "Start a new book..."
 - "Draft a section about..."
+
+## When NOT to Trigger This Skill
+
+Do **not** invoke CandleKeep when:
+- The user is asking for **web search or external research** — not involving their personal library (e.g., "research the latest news on X")
+- The user **explicitly says** they don't want CandleKeep (e.g., "don't check my library")
+- Keywords like "read" or "write" refer to **file I/O or code operations**, not documents (e.g., "read the config file", "write a function")
+- The request is about **general knowledge** the user doesn't expect to be in their library
+- The user is asking Claude to **search the web**, use a search engine, or fetch a URL
 
 ### Auto-Trigger Scenarios
 
@@ -273,6 +282,28 @@ When a user wants to turn saved sources into a curated document:
 
 1. `item-reader` runs `ck sources list --json`, clusters by topic, identifies themes
 2. `book-writer` receives the themes and creates a synthesized markdown document with citations
+
+## Common Mistakes to Avoid
+
+### Uploading without downloading first
+**Bad:** `ck items put <id> --file /tmp/new-content.md` — overwrites the entire book.
+**Better:** `ck items get <id> > /tmp/book-<id>.md` first, edit locally, then put.
+
+### Reading pages that don't exist
+**Bad:** `ck items read "<id>:50-60"` on a 16-page book.
+**Better:** Check page count with `ck items toc <id>` first, then request valid ranges.
+
+### Using stale item IDs
+**Bad:** Reusing an item ID from a previous conversation.
+**Better:** Always `ck items list` fresh to get current IDs.
+
+### Skipping TOC verification for enrichment
+**Bad:** Submitting TOC page numbers without verifying them — wrong page numbers make retrieval unreliable.
+**Better:** Verify at least 3 TOC entries by reading those pages before submitting.
+
+### Running CLI commands directly for research
+**Bad:** Running `ck items read` in the main conversation instead of launching the item-reader subagent.
+**Better:** Always launch the `item-reader` subagent via the Task tool — it handles the full research workflow with proper citations.
 
 ## Example Workflow
 

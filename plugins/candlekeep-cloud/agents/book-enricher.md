@@ -200,6 +200,11 @@ After processing, report what you enriched:
 - **Can't determine metadata**: Submit with low confidence or skip
 - **API errors**: Report the error and continue with remaining items
 
+## Related Agents
+
+- **item-reader** — This agent typically runs alongside the item-reader during research sessions. The item-reader flags books with poor metadata using `ck items flag <id>`, which adds them to the enrichment queue.
+- **book-writer** — When the book-writer creates new documents, those documents may appear in the enrichment queue if their metadata is incomplete.
+
 ## Scope Limits
 
 - Process maximum 2 items per session

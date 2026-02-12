@@ -194,6 +194,11 @@ When the user specifically asks about their sources (saved tweets, saved sources
 >
 > I'd recommend turning the AI/ML cluster into a curated document — there's enough material for a solid overview.
 
+## Related Agents
+
+- **book-writer** — If the user wants to write or create a document based on research findings, suggest launching the `book-writer` agent after completing research.
+- **book-enricher** — Runs alongside this agent during research sessions to improve library metadata. If you encounter books with poor metadata, flag them with `ck items flag <id>` for the enricher to process.
+
 ## Error Handling
 
 If you encounter errors:

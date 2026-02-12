@@ -5,6 +5,17 @@ All notable changes to the CandleKeep Cloud plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-02-12
+
+### Added
+- **README.md** for the candlekeep skill — human-readable guide with quick start, prerequisites, agent descriptions, and links (Guide checklist item #2)
+- **"When NOT to Trigger" section** in SKILL.md — prevents false triggers on web search requests, file I/O keywords, and general knowledge questions (Guide pages 3, 15)
+- **"Common Mistakes to Avoid" section** in SKILL.md — 5 Bad/Better anti-patterns covering upload-without-download, stale IDs, page range errors, TOC verification, and direct CLI usage (Guide pages 4, 15)
+- **Cross-references between agents** — each agent now lists related agents with handoff guidance (Guide pages 3, 13)
+
+### Changed
+- **Skill description sharpened** — value proposition ("Search your library for answers with citations...") replaces verb list (Guide pages 5, 12)
+
 ## [1.6.0] - 2026-02-05
 
 ### Added
