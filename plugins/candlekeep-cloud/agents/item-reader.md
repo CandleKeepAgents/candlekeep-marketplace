@@ -164,6 +164,11 @@ ck items flag <id>
 
 This helps the book-enricher agent know which items need attention. You don't need to stop your research - just flag and continue.
 
+## Related Agents
+
+- **book-writer** — If the user wants to write or create a document based on research findings, suggest launching the `book-writer` agent after completing research.
+- **book-enricher** — Runs alongside this agent during research sessions to improve library metadata. If you encounter books with poor metadata, flag them with `ck items flag <id>` for the enricher to process.
+
 ## Error Handling
 
 If you encounter errors:

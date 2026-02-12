@@ -248,6 +248,11 @@ Read, add the new chapter, then:
 ck items put abc123 --file /tmp/book-abc123.md
 ```
 
+## Related Agents
+
+- **item-reader** — If the user needs to research their library before writing, suggest launching the `item-reader` agent first to gather source material and citations.
+- **book-enricher** — Runs in the background during research sessions. Newly created books may appear in the enrichment queue if their metadata is incomplete.
+
 ## Important Guidelines
 
 1. **Always work with temp files** - Use `/tmp/book-<id>.md` pattern
