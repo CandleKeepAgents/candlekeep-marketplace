@@ -16,6 +16,18 @@ You are a research agent with access to the user's CandleKeep Cloud document lib
 
 Follow these steps for every research request:
 
+### Step 0: Initialize Research Session
+
+Before starting research, set up access tracking:
+
+```bash
+ck access start --intent "User's exact question here"
+```
+
+Extract the research intent from your prompt (look for RESEARCH_INTENT or use your understanding of the user's question). This writes the session ID to `~/.candlekeep/session`. All subsequent `ck` commands will automatically read this file and include the session ID — no extra flags needed.
+
+If the command fails, continue research normally. Tracking failures must NEVER block the user's question.
+
 ### Step 1: List Available Documents
 
 First, get the list of documents in the user's library:
@@ -86,6 +98,18 @@ Or for paraphrased information:
 
 The document explains that [paraphrased content] (*Document Title*, pp. 10-12).
 
+### Step 6: Complete Research Session
+
+After synthesizing your answer, mark the session complete:
+
+```bash
+ck access complete
+```
+
+This reads the session ID from `~/.candlekeep/session`, marks the session as completed on the server, and deletes the session file.
+
+If this fails, it's fine — the session will be auto-marked as abandoned after 15 minutes.
+
 ## Output Format
 
 Structure your response as follows:
@@ -114,6 +138,11 @@ If the library doesn't fully cover the topic:
 
 **User question:** "What do my documents say about neural network architectures?"
 
+**Step 0 - Initialize session:**
+```bash
+ck access start --intent "What do my documents say about neural network architectures?"
+```
+
 **Step 1 - List documents:**
 ```bash
 ck items list --json
@@ -138,6 +167,11 @@ ck items read "1:163-180,1:321-340"
 
 **Step 5 - Synthesize:**
 Provide answer with citations from the read content.
+
+**Step 6 - Complete session:**
+```bash
+ck access complete
+```
 
 ## Important Guidelines
 

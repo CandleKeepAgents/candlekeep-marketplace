@@ -5,6 +5,16 @@ All notable changes to the CandleKeep Cloud plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-02-14
+
+### Added
+- Research session tracking in item-reader agent (Step 0: start session, Step 6: complete session)
+- RESEARCH_INTENT passed from skill to item-reader for intent tracking
+- `--no-session` flag on all book-enricher commands to avoid session interference
+
+### Changed
+- book-enricher and book-writer agents now explicitly opt out of session tracking
+
 ## [1.5.1] - 2026-02-12
 
 ### Added

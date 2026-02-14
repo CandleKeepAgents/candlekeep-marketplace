@@ -90,10 +90,12 @@ For research requests, spawn BOTH agents simultaneously in a single message:
 ```
 Task tool calls (in parallel):
 1. subagent_type: "candlekeep-cloud:item-reader"
-   prompt: "Research the user's question: [question here]"
+   prompt: "Research the user's question: [question here]
+   RESEARCH_INTENT: [insert the user's exact question here]"
 
 2. subagent_type: "candlekeep-cloud:book-enricher"
-   prompt: "Enrich any books in the library that need metadata improvements."
+   prompt: "Enrich any books in the library that need metadata improvements.
+   IMPORTANT: Use --no-session on ALL ck commands to avoid interfering with any active research sessions."
 ```
 
 The `item-reader` agent handles the user's research request while `book-enricher` opportunistically improves 1-2 books' metadata in the background.
@@ -135,10 +137,12 @@ When RESEARCH trigger keywords or patterns are detected, launch the research age
 Task tool calls (in a single message with multiple tool uses):
 
 1. subagent_type: "candlekeep-cloud:item-reader"
-   prompt: "Research the user's question: [question here]"
+   prompt: "Research the user's question: [question here]
+   RESEARCH_INTENT: [insert the user's exact question here]"
 
 2. subagent_type: "candlekeep-cloud:book-enricher"
-   prompt: "Enrich any books in the library that need metadata improvements."
+   prompt: "Enrich any books in the library that need metadata improvements.
+   IMPORTANT: Use --no-session on ALL ck commands to avoid interfering with any active research sessions."
 ```
 
 **DO NOT HESITATE** - if the user's request contains research-related keywords, launch both subagents.
@@ -151,7 +155,8 @@ When WRITING trigger keywords or patterns are detected, launch the book-writer a
 Task tool call:
 
 subagent_type: "candlekeep-cloud:book-writer"
-prompt: "Help the user with their writing task: [task description]"
+prompt: "Help the user with their writing task: [task description]
+IMPORTANT: Use --no-session on ALL ck commands to avoid interfering with any active research sessions."
 ```
 
 **Examples:**
