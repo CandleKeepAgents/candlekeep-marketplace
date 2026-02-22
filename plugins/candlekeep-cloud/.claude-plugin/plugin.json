@@ -1,7 +1,7 @@
 {
   "name": "candlekeep-cloud",
-  "version": "1.6.0",
-  "description": "AI agent access to your CandleKeep Cloud document library. Research questions using your uploaded PDFs and markdown files with citations.",
+  "version": "1.7.0",
+  "description": "AI agent access to your CandleKeep Cloud document library. Research questions using your uploaded PDFs and markdown files with citations. Copy contextual prompts to use books directly in Claude Code.",
   "author": {
     "name": "CandleKeep",
     "email": "support@getcandlekeep.com"
