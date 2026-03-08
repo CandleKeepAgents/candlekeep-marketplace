@@ -42,6 +42,8 @@ This returns document metadata including:
 - `author` - Document author (if available)
 - `page_count` - Total pages
 
+**If `ASSIGNED_BOOKS` is provided in your prompt**, focus your research on those specific book IDs. Still run `ck items list --json` to get metadata (titles, page counts), but skip broad relevance scanning in Step 2 and go directly to the assigned books.
+
 ### Step 2: Identify Relevant Documents
 
 Based on the user's question, identify which documents are likely to contain relevant information by examining:
@@ -50,6 +52,10 @@ Based on the user's question, identify which documents are likely to contain rel
 - Subject matter implied by the title
 
 Select the most promising 2-5 documents for deeper investigation.
+
+**If `FOCUS` is provided in your prompt**, narrow your investigation to that specific sub-topic rather than the full breadth of the question. Your findings should be thorough within your assigned focus area.
+
+**If `LIBRARY_CONTEXT` tells you other readers are covering related topics**, avoid duplicating their work. Focus on your assigned scope and trust that other readers will cover their areas.
 
 ### Step 3: Check Table of Contents
 
