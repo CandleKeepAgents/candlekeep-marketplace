@@ -5,6 +5,14 @@ All notable changes to the CandleKeep Cloud plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-03-08
+
+### Changed
+- Research flow now uses orchestrator-workers pattern: skill assesses library scope before dispatching readers
+- Multiple item-reader agents launched in parallel for multi-topic or large-scope research
+- Each reader receives a focused mandate with assigned books and specific sub-questions
+- item-reader now accepts ASSIGNED_BOOKS, FOCUS, and LIBRARY_CONTEXT parameters
+
 ## [1.6.0] - 2026-02-14
 
 ### Added
