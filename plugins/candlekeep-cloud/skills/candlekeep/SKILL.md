@@ -25,6 +25,11 @@ Access and search your CandleKeep Cloud document library to answer questions wit
 - **Editing words**: "edit", "update", "revise", "modify", "change", "rewrite"
 - **Structure words**: "add chapter", "new section", "reorganize", "restructure"
 
+### Marketplace Trigger Keywords (run ck marketplace browse directly)
+- **Browse words**: "marketplace", "browse marketplace", "search marketplace", "browse books"
+- **Discovery words**: "find books", "get books about", "discover books", "available books"
+- **Shopping words**: "subscribe", "add from marketplace", "marketplace recommendations"
+
 ### Research Trigger Patterns (launch item-reader)
 - "What does X say about..."
 - "Can you research..."
@@ -108,6 +113,11 @@ Based on your assessment, dispatch with **clear mandates per worker**:
 
 **Always** launch `book-enricher` in the background alongside the readers (unchanged).
 
+**Pro-only books**: Some marketplace books are pro-only. The item-reader will
+still attempt to read them but may receive only preview content (first 2 pages).
+The reader will handle this gracefully with a cite + tease pattern. Do not
+filter pro books from assigned lists — partial information is still valuable.
+
 ## Decision Tree
 
 ```
@@ -123,6 +133,14 @@ User request
     ├── Question that might be answered by documents
     │   └── Phase 1: Assess library (ck items list --json)
     │       └── Phase 2: Dispatch 1-3 item-reader agents based on scope
+    │
+    ├── Contains MARKETPLACE keywords (marketplace, browse, find books, subscribe)
+    │   └── Run: ck marketplace browse --search "<query>" --json
+    │       └── Present results with subscribe commands
+    │
+    ├── Contains PLANNING keywords (plan, design, architect, strategy, how should I)
+    │   └── Phase 1: Assess library (ck items list --json)
+    │       └── Dispatch item-reader in background + continue planning
     │
     ├── "What documents do I have?" / "List my library"
     │   └── Run: ck items list
@@ -299,6 +317,54 @@ ck auth logout && ck auth login
 - `Not authenticated` → Run `ck auth login`
 - `CLI not found` → Guide user to install via Homebrew or Cargo
 
+## Marketplace Discovery
+
+When the user's request contains marketplace-related keywords, run the CLI directly (no subagent needed):
+
+```bash
+ck marketplace browse --search "<keywords from user request>" --json --limit 10
+```
+
+Present results as an actionable list:
+
+```
+Found X books on the marketplace:
+
+1. **"Book Title"** by Author (42 pages, 128 subscribers)
+   `ck marketplace subscribe <listing-id>`
+
+2. **"Another Book"** by Author (85 pages, 56 subscribers)
+   `ck marketplace subscribe <listing-id>`
+```
+
+**Contextual tip** (show once per session, only when user has < 5 items in library):
+> Tip: The CandleKeep marketplace has books on [detected topic]. Browse with `ck marketplace browse --search "<topic>"` or `ck marketplace browse --tag <tag-slug>`.
+
+## Plan Mode: Parallel Library Exploration
+
+When the user's request contains planning keywords ("plan", "design", "architect", "strategy", "how should I", "what's the best way to"), spawn the item-reader in the background to enrich the plan with library knowledge.
+
+**Detection**: Planning keywords in the user's message indicate they are designing or architecting something.
+
+**Behavior**: Spawn item-reader in parallel with your planning work:
+
+```
+Task tool calls (in parallel with planning):
+
+1. subagent_type: "candlekeep-cloud:item-reader"
+   prompt: "Research the user's library for guidance relevant to: [planning topic]
+   RESEARCH_INTENT: Find design patterns, best practices, and architectural principles for: [topic]
+   Focus on actionable guidance that can inform an implementation plan."
+   run_in_background: true
+
+2. subagent_type: "candlekeep-cloud:book-enricher"
+   prompt: "Enrich any books needing metadata improvements.
+   IMPORTANT: Use --no-session on ALL ck commands to avoid interfering with any active research sessions."
+   run_in_background: true
+```
+
+The main agent continues planning normally. When item-reader returns, incorporate library findings into the plan. This ensures plans are enriched with the user's domain knowledge without blocking the planning process.
+
 ## CLI Commands Reference
 
 ### Library Management
@@ -326,6 +392,18 @@ ck auth logout && ck auth login
 | `ck auth whoami` | Check authentication status |
 | `ck auth login` | Authenticate with CandleKeep Cloud |
 | `ck auth logout` | Log out of CandleKeep Cloud |
+
+### Marketplace
+
+| Command | Purpose |
+|---------|---------|
+| `ck marketplace browse` | Browse all marketplace listings |
+| `ck marketplace browse --search "<query>"` | Search marketplace by keyword |
+| `ck marketplace browse --tag <slug>` | Filter by tag |
+| `ck marketplace browse --sort popular` | Sort by popularity |
+| `ck marketplace browse --json` | JSON output (for agents) |
+| `ck marketplace subscribe <listing-id>` | Add a marketplace book to your library |
+| `ck marketplace unsubscribe <listing-id>` | Remove a marketplace book |
 
 ## Common Mistakes to Avoid
 

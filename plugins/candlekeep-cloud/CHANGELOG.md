@@ -5,6 +5,22 @@ All notable changes to the CandleKeep Cloud plugin will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-03-18
+
+### Added
+- Marketplace gap-check workflow in item-reader agent (Step 4.5) — suggests marketplace books when library coverage is thin
+- Marketplace trigger keywords and discovery flow in SKILL.md
+- Marketplace CLI commands table (browse, subscribe, unsubscribe)
+- Plan mode: parallel library exploration for planning-related requests
+- Marketplace decision tree branches in SKILL.md
+- Pro-restricted content handling in item-reader agent (Step 4b: cite + tease pattern)
+- Pro books awareness in orchestrator skill
+
+### Changed
+- Plugin description updated to mention contextual prompts
+- item-reader output format now includes Section 4 (Marketplace Recommendations) and Section 5 (Recommendations)
+- item-reader gracefully handles `proRestricted` API responses with preview-only content
+
 ## [1.7.0] - 2026-03-08
 
 ### Changed
