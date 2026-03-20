@@ -1,6 +1,6 @@
 ---
 name: book-enricher
-description: Enriches books in CandleKeep library with missing metadata (title, author, description, table of contents). Runs opportunistically during research sessions.
+description: Enriches books in CandleKeep library with missing metadata (title, author, description, table of contents) and generates contextual Claude Code prompts. Runs opportunistically during research sessions.
 model: haiku
 tools:
   - Bash
@@ -27,6 +27,23 @@ ck items list --json --no-session
 ```
 
 Look for the `enrichmentQueue` array in the response. This contains 1-3 items prioritized for enrichment.
+
+### Step 1.5: Detect Repo Context
+
+Before processing books, detect the current project's tech stack to generate contextual prompts.
+
+Check for project manifest files:
+```bash
+ls package.json Cargo.toml pyproject.toml go.mod *.sln composer.json Gemfile 2>/dev/null
+```
+
+Read the relevant manifest to identify the stack. Examples:
+- `package.json` → Check dependencies for frameworks: "Next.js 15 + Prisma + Tailwind"
+- `Cargo.toml` → "Rust + Tokio + Serde"
+- `pyproject.toml` → "Python + FastAPI + SQLAlchemy"
+
+Store the detected stack description as a short string (e.g., "Next.js 15 + Prisma + Tailwind").
+If no manifest found, use "general" as context.
 
 ### Step 2: Early Exit If Empty
 
@@ -60,7 +77,7 @@ ck items toc "<id>" --no-session
 
 4. **Assess confidence** (0.0-1.0) based on how clearly the metadata was found
 
-5. **Submit enrichment** (include TOC if extracted):
+5. **Submit enrichment** (include all extracted data):
 ```bash
 ck items enrich <id> \
   --title "Extracted Title" \
@@ -68,8 +85,62 @@ ck items enrich <id> \
   --description "Brief description of the book's content and purpose." \
   --confidence 0.85 \
   --toc '[{"title":"Chapter 1","page":1,"level":1}]' \
+  --add-prompt '{"prompt":"review the Next.js server components against the book'\''s rendering patterns. Cite specific pages.","context":"Next.js 15 + Prisma"}' \
+  --sample-question "What patterns should I use for server-side data fetching?" \
   --no-session
 ```
+
+### Step 3.5: Generate Contextual Claude Code Prompt
+
+After reading book content and detecting repo context, generate a prompt that connects the book's knowledge to the current codebase.
+
+**Prompt Guidelines:**
+- Start with an action verb (review, evaluate, audit, check, analyze)
+- Reference specific technologies from the detected repo stack
+- Reference specific topics/patterns from the book content
+- Do NOT include the book title (the template adds it automatically)
+- End with "Cite specific pages."
+- Keep it under 200 characters
+
+**Examples:**
+| Book Topic | Repo Stack | Generated Prompt |
+|-----------|-----------|-----------------|
+| Domain-Driven Design | Next.js + Prisma | "review the Prisma schema and API routes against the book's bounded context patterns. Cite specific pages." |
+| Clean Code | Python + FastAPI | "evaluate the FastAPI endpoint handlers against the book's function design principles. Cite specific pages." |
+| System Design | Rust + Tokio | "analyze the async task architecture against the book's scalability patterns. Cite specific pages." |
+| React Patterns | Next.js + React | "review the React components against the book's composition and state management patterns. Cite specific pages." |
+| General/Unknown | any | "review the codebase architecture against the book's key principles. Cite specific pages." |
+
+### Step 3.6: Check Multi-Book Synergies (Optional)
+
+After generating a single-book prompt, check the full library (from Step 1's `ck items list` output) for related books that could be used together.
+
+Look for synergies like:
+- A framework book + a testing book → "Use both books to review test coverage"
+- A design patterns book + a language-specific book → "Cross-reference patterns with idiomatic implementations"
+- An architecture book + a DevOps book → "Evaluate deployment pipeline against architectural principles"
+
+If a synergy exists, generate a multi-book combination prompt:
+```bash
+ck items enrich <id> \
+  --add-prompt '{"prompt":"use both this book and \"Other Book Title\" to review the codebase'\''s test architecture. Cross-reference testing patterns with framework best practices. Cite pages from each.","context":"Next.js + Vitest","multiBook":true}' \
+  --no-session
+```
+
+Only generate multi-book prompts when there's a clear, meaningful connection. Skip if unsure.
+
+### Sample Question Guidelines
+
+Generate a `--sample-question` that:
+- Represents a practical question the book answers
+- Is phrased from the developer's perspective
+- Is 10-20 words
+- Relates to the repo's tech stack when possible
+
+Examples:
+- "What patterns should I use for server-side data fetching?"
+- "How should I structure domain models in a microservice?"
+- "What are the best practices for error handling in async Rust?"
 
 ## TOC Guidelines
 
@@ -178,6 +249,9 @@ After processing, report what you enriched:
 - **Author**: Ian Goodfellow, Yoshua Bengio, Aaron Courville
 - **Description**: Comprehensive textbook covering deep learning foundations, architectures, and applications.
 - **TOC**: 22 chapters extracted
+- **Claude Code Prompt**: "review the neural network implementations against the book's architecture patterns. Cite specific pages."
+- **Prompt Context**: Next.js + TensorFlow.js
+- **Sample Question**: "What activation function should I use for my classification layer?"
 - **Confidence**: 0.95
 
 ### Book 2
@@ -187,6 +261,9 @@ After processing, report what you enriched:
 - **Author**: Sun Tzu (translated by Lionel Giles)
 - **Description**: Ancient Chinese military treatise on strategy and tactics.
 - **TOC**: Already present (13 chapters)
+- **Claude Code Prompt**: "review the codebase architecture against the book's key principles. Cite specific pages."
+- **Prompt Context**: general
+- **Sample Question**: "How should I approach strategic trade-offs in system design?"
 - **Confidence**: 0.85
 ```
 

@@ -25,6 +25,11 @@ Access and search your CandleKeep Cloud document library to answer questions wit
 - **Editing words**: "edit", "update", "revise", "modify", "change", "rewrite"
 - **Structure words**: "add chapter", "new section", "reorganize", "restructure"
 
+### Marketplace Trigger Keywords (run ck marketplace browse directly)
+- **Browse words**: "marketplace", "browse marketplace", "search marketplace", "browse books"
+- **Discovery words**: "find books", "get books about", "discover books", "available books"
+- **Shopping words**: "subscribe", "add from marketplace", "marketplace recommendations"
+
 ### Research Trigger Patterns (launch item-reader)
 - "What does X say about..."
 - "Can you research..."
@@ -78,35 +83,27 @@ Do **not** invoke CandleKeep when:
 
 When answering questions that might be in the user's document library:
 
-1. **NEVER** run `ck items read` commands directly for research questions
-2. **ALWAYS** assess the library first, then dispatch the right number of `item-reader` agents
-3. **ALSO** launch the `book-enricher` subagent in the background to opportunistically improve library metadata
+1. **ALWAYS** launch the `item-reader` subagent using the Task tool
+2. **NEVER** run `ck items read` commands directly for research questions
+3. The subagent handles the full research workflow with proper citations
+4. **ALSO** launch the `book-enricher` subagent in parallel to opportunistically improve library metadata
 
-### Orchestrator-Workers Research Pattern
+### Parallel Agent Launch
 
-The skill acts as an **orchestrator** that assesses scope before dispatching workers. This follows the principle: *scale effort appropriately — simple queries need 1 reader, complex research questions may need multiple readers working in parallel*.
+For research requests, spawn BOTH agents simultaneously in a single message:
 
-#### Phase 1: Library Assessment (you do this directly)
+```
+Task tool calls (in parallel):
+1. subagent_type: "candlekeep-cloud:item-reader"
+   prompt: "Research the user's question: [question here]
+   RESEARCH_INTENT: [insert the user's exact question here]"
 
-Run `ck items list --json` yourself (listing is NOT reading — this does not violate the "never read directly" rule). Then analyze:
+2. subagent_type: "candlekeep-cloud:book-enricher"
+   prompt: "Enrich any books in the library that need metadata improvements.
+   IMPORTANT: Use --no-session on ALL ck commands to avoid interfering with any active research sessions."
+```
 
-1. **How many books** are in the library total
-2. **Which books are relevant** to the user's question (by title, author, subject)
-3. **Are there distinct topic clusters?** — e.g., "research AI safety and quantum computing" touches two unrelated domains
-4. **Does the question have sub-questions?** — e.g., "compare approaches to X across my books" vs "what does book Y say about Z"
-
-#### Phase 2: Dynamic Dispatch (decide worker count)
-
-Based on your assessment, dispatch with **clear mandates per worker**:
-
-| Scenario | Readers | Strategy |
-|----------|---------|----------|
-| 0 relevant books | 0 | Inform user, suggest adding documents |
-| 1-3 relevant books, single topic | 1 | All relevant books, full question |
-| 4-8 relevant books OR 2 distinct topics | 2 | Each gets specific books + focused sub-question |
-| 8+ relevant books OR 3+ distinct topics | 3 (max) | Each gets specific books + focused sub-question |
-
-**Always** launch `book-enricher` in the background alongside the readers (unchanged).
+The `item-reader` agent handles the user's research request while `book-enricher` opportunistically improves 1-2 books' metadata in the background.
 
 ## Decision Tree
 
@@ -114,15 +111,21 @@ Based on your assessment, dispatch with **clear mandates per worker**:
 User request
     │
     ├── Contains RESEARCH keywords (research, read, refer, look up, find)
-    │   └── Phase 1: Assess library (ck items list --json)
-    │       └── Phase 2: Dispatch 1-3 item-reader agents based on scope
+    │   └── Launch item-reader subagent (Task tool) - AUTOMATIC
     │
     ├── Contains WRITING keywords (write, create, edit, update, chapter, book)
     │   └── Launch book-writer subagent (Task tool) - AUTOMATIC
     │
     ├── Question that might be answered by documents
+    │   └── Launch item-reader subagent (Task tool) - AUTOMATIC
+    │
+    ├── Contains MARKETPLACE keywords (marketplace, browse, find books, subscribe)
+    │   └── Run: ck marketplace browse --search "<query>" --json
+    │       └── Present results with subscribe commands
+    │
+    ├── Contains PLANNING keywords (plan, design, architect, strategy, how should I)
     │   └── Phase 1: Assess library (ck items list --json)
-    │       └── Phase 2: Dispatch 1-3 item-reader agents based on scope
+    │       └── Dispatch item-reader in background + continue planning
     │
     ├── "What documents do I have?" / "List my library"
     │   └── Run: ck items list
@@ -141,78 +144,21 @@ User request
 
 ### For Research Questions
 
-When RESEARCH trigger keywords or patterns are detected, follow the orchestrator workflow:
-
-#### Step 1: Assess the Library
-
-Run this yourself (do NOT delegate to a subagent):
-
-```bash
-ck items list --json
-```
-
-Analyze the results to determine:
-- Total number of books
-- Which books are relevant (by title, author, subject keywords)
-- Whether the question spans multiple distinct topics
-- Whether the question has natural sub-questions
-
-#### Step 2: Decide Dispatch Strategy
-
-Apply the decision criteria:
-
-- **0 relevant books** → Tell the user their library doesn't cover this topic. Suggest adding relevant documents. Do NOT launch any readers.
-- **1-3 relevant books, single topic** → Launch 1 reader with all relevant books
-- **4-8 relevant books OR 2 distinct topics** → Launch 2 readers, each with a focused mandate
-- **8+ relevant books OR 3+ distinct topics** → Launch 3 readers (max), each with a focused mandate
-
-#### Step 3: Dispatch Workers
-
-**Single reader** (simple case):
+When RESEARCH trigger keywords or patterns are detected, launch the research agents:
 
 ```
-Task tool calls (in a single message):
+Task tool calls (in a single message with multiple tool uses):
 
 1. subagent_type: "candlekeep-cloud:item-reader"
    prompt: "Research the user's question: [question here]
-   RESEARCH_INTENT: [user's exact question]
-   ASSIGNED_BOOKS: [id1, id2, id3]
-   LIBRARY_CONTEXT: [total N books in library, M deemed relevant]"
+   RESEARCH_INTENT: [insert the user's exact question here]"
 
 2. subagent_type: "candlekeep-cloud:book-enricher"
-   run_in_background: true
    prompt: "Enrich any books in the library that need metadata improvements.
    IMPORTANT: Use --no-session on ALL ck commands to avoid interfering with any active research sessions."
 ```
 
-**Multiple readers** (complex case — each reader gets a focused mandate):
-
-```
-Task tool calls (in a single message):
-
-1. subagent_type: "candlekeep-cloud:item-reader"
-   prompt: "Research the user's question: [full question]
-   RESEARCH_INTENT: [user's exact question]
-   FOCUS: [specific sub-topic or angle for this reader]
-   ASSIGNED_BOOKS: [ids relevant to this focus]
-   LIBRARY_CONTEXT: You are reader 1 of N. Other readers are covering: [list other focuses]. Do not duplicate their work."
-
-2. subagent_type: "candlekeep-cloud:item-reader"
-   prompt: "Research the user's question: [full question]
-   RESEARCH_INTENT: [user's exact question]
-   FOCUS: [different sub-topic or angle]
-   ASSIGNED_BOOKS: [different set of book ids]
-   LIBRARY_CONTEXT: You are reader 2 of N. Other readers are covering: [list other focuses]. Do not duplicate their work."
-
-3. subagent_type: "candlekeep-cloud:book-enricher"
-   run_in_background: true
-   prompt: "Enrich any books in the library that need metadata improvements.
-   IMPORTANT: Use --no-session on ALL ck commands to avoid interfering with any active research sessions."
-```
-
-The `LIBRARY_CONTEXT` line tells each reader what the others are handling, preventing overlap. Without explicit delegation guidance, agents under-delegate or create overlapping assignments — always be explicit about scope boundaries.
-
-**DO NOT HESITATE** — if the user's request contains research-related keywords, assess and dispatch immediately.
+**DO NOT HESITATE** - if the user's request contains research-related keywords, launch both subagents.
 
 ### For Writing/Editing Tasks
 
@@ -255,6 +201,54 @@ ck items read "<id>" <page> <page>
 ```
 
 Check that the chapter heading appears at the top of the returned content.
+
+## Marketplace Discovery
+
+When the user's request contains marketplace-related keywords, run the CLI directly (no subagent needed):
+
+```bash
+ck marketplace browse --search "<keywords from user request>" --json --limit 10
+```
+
+Present results as an actionable list:
+
+```
+Found X books on the marketplace:
+
+1. **"Book Title"** by Author (42 pages, 128 subscribers)
+   `ck marketplace subscribe <listing-id>`
+
+2. **"Another Book"** by Author (85 pages, 56 subscribers)
+   `ck marketplace subscribe <listing-id>`
+```
+
+**Contextual tip** (show once per session, only when user has < 5 items in library):
+> Tip: The CandleKeep marketplace has books on [detected topic]. Browse with `ck marketplace browse --search "<topic>"` or `ck marketplace browse --tag <tag-slug>`.
+
+## Plan Mode: Parallel Library Exploration
+
+When the user's request contains planning keywords ("plan", "design", "architect", "strategy", "how should I", "what's the best way to"), spawn the item-reader in the background to enrich the plan with library knowledge.
+
+**Detection**: Planning keywords in the user's message indicate they are designing or architecting something.
+
+**Behavior**: Spawn item-reader in parallel with your planning work:
+
+```
+Task tool calls (in parallel with planning):
+
+1. subagent_type: "candlekeep-cloud:item-reader"
+   prompt: "Research the user's library for guidance relevant to: [planning topic]
+   RESEARCH_INTENT: Find design patterns, best practices, and architectural principles for: [topic]
+   Focus on actionable guidance that can inform an implementation plan."
+   run_in_background: true
+
+2. subagent_type: "candlekeep-cloud:book-enricher"
+   prompt: "Enrich any books needing metadata improvements.
+   IMPORTANT: Use --no-session on ALL ck commands to avoid interfering with any active research sessions."
+   run_in_background: true
+```
+
+The main agent continues planning normally. When item-reader returns, incorporate library findings into the plan. This ensures plans are enriched with the user's domain knowledge without blocking the planning process.
 
 ## Prerequisites Check
 
@@ -327,6 +321,18 @@ ck auth logout && ck auth login
 | `ck auth login` | Authenticate with CandleKeep Cloud |
 | `ck auth logout` | Log out of CandleKeep Cloud |
 
+### Marketplace
+
+| Command | Purpose |
+|---------|---------|
+| `ck marketplace browse` | Browse all marketplace listings |
+| `ck marketplace browse --search "<query>"` | Search marketplace by keyword |
+| `ck marketplace browse --tag <slug>` | Filter by tag |
+| `ck marketplace browse --sort popular` | Sort by popularity |
+| `ck marketplace browse --json` | JSON output (for agents) |
+| `ck marketplace subscribe <listing-id>` | Add a marketplace book to your library |
+| `ck marketplace unsubscribe <listing-id>` | Remove a marketplace book |
+
 ## Common Mistakes to Avoid
 
 ### Uploading without downloading first
@@ -349,61 +355,35 @@ ck auth logout && ck auth login
 **Bad:** Running `ck items read` in the main conversation instead of launching the item-reader subagent.
 **Better:** Always launch the `item-reader` subagent via the Task tool — it handles the full research workflow with proper citations.
 
-## Example Workflows
-
-### Simple: Single-Topic Research
+## Example Workflow
 
 **User asks:** "What do my books say about machine learning?"
 
 **Correct response:**
 1. Recognize "my books" and "say about" as trigger patterns
-2. **Phase 1**: Run `ck items list --json` — find 3 books, 2 relevant (a ML textbook and a data science guide)
-3. **Phase 2**: 2 relevant books, single topic → dispatch 1 reader
-4. Launch reader with `ASSIGNED_BOOKS: [id1, id2]` + book-enricher in background
-5. Present the reader's findings to the user
+2. Immediately launch BOTH subagents in parallel:
+   - `item-reader`: Research the user's question about machine learning
+   - `book-enricher`: Enrich any books needing metadata
+3. Present the item-reader's findings to the user
+4. Optionally mention any books that were enriched
 
-### Complex: Multi-Topic Research
-
-**User asks:** "Compare what my library says about neural networks vs genetic algorithms"
-
-**Correct response:**
-1. Recognize "my library" and "says about" as trigger patterns
-2. **Phase 1**: Run `ck items list --json` — find 8 books, 5 relevant (3 on neural nets, 2 on evolutionary computing)
-3. **Phase 2**: 5 relevant books, 2 distinct topics → dispatch 2 readers
-4. Launch:
-   - Reader 1: `FOCUS: neural networks`, `ASSIGNED_BOOKS: [id1, id2, id3]`
-   - Reader 2: `FOCUS: genetic algorithms`, `ASSIGNED_BOOKS: [id4, id5]`
-   - book-enricher in background
-5. Synthesize both readers' findings into a comparison for the user
-
-### Large Library: Broad Research
-
-**User asks:** "Research everything my documents say about software architecture"
+**User asks:** "Research neural networks for me"
 
 **Correct response:**
 1. Recognize "research" as a trigger keyword
-2. **Phase 1**: Run `ck items list --json` — find 15 books, 9 relevant across design patterns, microservices, and system design
-3. **Phase 2**: 9 relevant books, 3 topic clusters → dispatch 3 readers
-4. Launch:
-   - Reader 1: `FOCUS: design patterns and principles`, `ASSIGNED_BOOKS: [id1, id2, id3]`
-   - Reader 2: `FOCUS: microservices and distributed systems`, `ASSIGNED_BOOKS: [id4, id5, id6]`
-   - Reader 3: `FOCUS: system design and scalability`, `ASSIGNED_BOOKS: [id7, id8, id9]`
-   - book-enricher in background
-5. Combine all three readers' findings into a comprehensive answer
+2. Immediately launch both item-reader and book-enricher subagents in parallel
+3. Present findings with citations
 
-### Edge Case: Empty or No Relevant Books
-
-**User asks:** "What do my documents say about quantum computing?"
+**User asks:** "Can you look up information about databases?"
 
 **Correct response:**
-1. **Phase 1**: Run `ck items list --json` — find 5 books, 0 relevant to quantum computing
-2. **Phase 2**: 0 relevant books → do NOT launch any readers
-3. Inform user: "Your library doesn't currently contain documents about quantum computing. Consider adding relevant PDFs or markdown files with `ck items add <file>`."
+1. Recognize "look up" as a trigger keyword
+2. Launch both subagents automatically in parallel
+3. Report findings from the user's document library
 
 **Incorrect responses:**
 - Running `ck items read` directly without using the subagent
 - Asking if the user wants to search their library (just do it!)
-- Skipping Phase 1 assessment and blindly launching a single reader
-- Launching the same number of readers regardless of library size or question complexity
+- Trying to manually piece together research without proper workflow
 - Not recognizing trigger keywords and missing an opportunity to help
 - Only launching item-reader without book-enricher (miss enrichment opportunity)
