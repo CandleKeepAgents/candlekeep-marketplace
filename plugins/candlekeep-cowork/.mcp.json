@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "candlekeep": {
+      "type": "http",
+      "url": "https://www.getcandlekeep.com/api/v1/mcp"
+    }
+  }
+}

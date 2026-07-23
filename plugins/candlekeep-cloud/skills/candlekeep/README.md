@@ -45,4 +45,4 @@ The skill automatically detects your intent and launches the right agent.
 ## Links
 
 - [CandleKeep Cloud](https://www.getcandlekeep.com)
-- [GitHub](https://github.com/CandleKeepAgents/candlekeep-marketplace)
+- [GitHub](https://github.com/CandleKeepAgentOrg/candlekeep)

@@ -1,154 +1,112 @@
-# CandleKeep Cloud - Claude Code Plugin
+# CandleKeep — Claude plugin marketplace
 
-Give AI agents access to your CandleKeep Cloud document library. Research questions, get cited answers, and manage your library directly from Claude Code.
+CandleKeep gives your AI agents a library they can actually read.
 
-## What This Plugin Does
+Point an agent at the PDFs, ebooks and markdown documents you've collected, and it
+answers from those books with page-level citations instead of guessing from memory.
+This repository is the **plugin marketplace** — it hosts two plugins, one for each
+surface Claude runs on.
 
-- **Research with citations**: Ask questions and get answers sourced from your uploaded PDFs
-- **Intelligent document search**: The AI identifies relevant documents and sections automatically
-- **Library management**: List, add, and remove documents from your CandleKeep Cloud library
-- **Cross-reference**: Synthesize information from multiple documents in a single query
+Home: <https://www.getcandlekeep.com> · Support: <support@getcandlekeep.com>
 
-## Installation
+---
 
-### Prerequisites
+## Add this marketplace
 
-#### 1. Install the CandleKeep CLI
+**Claude Cowork / Claude Desktop** — open **Customize → Plugins → Add marketplace**
+and enter:
 
-Choose one installation method:
-
-**Homebrew (macOS/Linux) - Recommended:**
-```bash
-brew tap CandleKeepAgents/candlekeep
-brew install candlekeep-cli
+```
+CandleKeepAgents/candlekeep-marketplace
 ```
 
-**Cargo:**
-```bash
-cargo install candlekeep-cli
-```
-
-**cargo-binstall (faster binary installation):**
-```bash
-cargo binstall candlekeep-cli
-```
-
-#### 2. Authenticate with CandleKeep Cloud
+**Claude Code**:
 
 ```bash
-ck auth login
-```
-
-This opens your browser to sign in to CandleKeep Cloud and authorize the CLI.
-
-Verify authentication:
-```bash
-ck auth whoami
-```
-
-### Plugin Installation
-
-#### 1. Add the CandleKeep Marketplace
-
-In Claude Code, run:
-```
 /plugin marketplace add CandleKeepAgents/candlekeep-marketplace
 ```
 
-#### 2. Install the Plugin
+Both plugins then appear in the plugin list. Install whichever matches where you work.
 
-```
-/plugin install candlekeep-cloud@candlekeep
-```
+---
 
-## Usage
+## Plugins in this marketplace
 
-### Research Questions
+| Plugin | Surface | Reaches your library via |
+|---|---|---|
+| [`candlekeep-cowork`](./plugins/candlekeep-cowork) | Claude Cowork & Claude Desktop | Hosted MCP connector (OAuth) — no CLI, no shell |
+| [`candlekeep-cloud`](./plugins/candlekeep-cloud) | Claude Code | The `ck` CLI |
 
-Ask Claude Code questions about your documents:
+Both deliver the same workflow through four specialist sub-agents:
 
-- "What does my library say about machine learning?"
-- "Research neural networks using my CandleKeep documents"
-- "Find information about data structures in my PDFs"
-- "Can you look up algorithms in my books?"
+| Sub-agent | Responsibility |
+|---|---|
+| **librarian** | Finds books. Searches your library and the marketplace, subscribes to relevant listings, and returns a reading list of book ids + page ranges. Never reads pages itself. |
+| **item-reader** | Reads the pages the librarian selected and answers with page-level citations. |
+| **book-writer** | Creates and edits markdown documents in your library. |
+| **book-enricher** | Fills in missing book metadata opportunistically during research. |
 
-The AI will:
-1. Search your library for relevant documents
-2. Identify the most relevant sections using table of contents
-3. Read specific pages with the information you need
-4. Provide a cited answer with references to specific pages
+### `candlekeep-cowork`
 
-### Library Management
+For Claude Cowork and Claude Desktop. Bundles the `candlekeep` skill, the four
+sub-agents, and the hosted CandleKeep MCP connector, so research, marketplace
+subscriptions and document writing all work with **no local CLI and no filesystem
+access**. Installing it prompts you to sign in to CandleKeep once via OAuth.
 
-Manage your CandleKeep Cloud library:
+You can also install it from a file — download
+<https://getcandlekeep.com/cowork-plugin.zip> and use the upload option on the
+**Plugins** page. That's a *plugin package*, so install it under **Plugins**, not
+under **Skills**. File installs don't auto-update; the marketplace route does.
 
-- "What documents do I have in CandleKeep?"
-- "List my library"
-- "Add this PDF to my library" (provide file path)
-- "Remove document X from my library"
+### `candlekeep-cloud`
 
-### Example Session
+For Claude Code. Same four sub-agents, driven by the `ck` CLI rather than MCP, plus
+a session-start hook that tells Claude how many books are available and surfaces your
+active manuscripts. Install the CLI first:
 
-```
-You: What do my books say about recursion?
-
-Claude: I'll search your CandleKeep library for information about recursion.
-
-[Launches item-reader agent]
-
-Based on your documents, here's what I found about recursion:
-
-**Sources Consulted:**
-- *Introduction to Algorithms* by Cormen et al. - Chapter 4 covers divide-and-conquer
-- *Structure and Interpretation of Computer Programs* - Extensive coverage of recursive procedures
-
-**Core Findings:**
-Recursion is defined as "a method where the solution depends on solutions to smaller instances of the same problem" (*Introduction to Algorithms*, p. 65).
-
-SICP emphasizes that recursive processes can be either linear or tree-shaped, noting that "the time required grows linearly with the input" for linear recursion (*SICP*, p. 35).
-
-**Additional Insights:**
-- Tail recursion optimization is covered in SICP pp. 36-38
-- Master theorem for recursive running time analysis in Algorithms pp. 73-96
+```bash
+curl -fsSL https://getcandlekeep.com/install.sh | sh
 ```
 
-## CLI Commands Reference
+---
 
-| Command | Description |
-|---------|-------------|
-| `ck auth login` | Authenticate with CandleKeep Cloud |
-| `ck auth logout` | Log out |
-| `ck auth whoami` | Check authentication status |
-| `ck items list` | List all documents |
-| `ck items list --json` | List with full metadata |
-| `ck items add <file>` | Upload a PDF |
-| `ck items remove <ids> --yes` | Delete documents |
-| `ck items toc <ids>` | View table of contents |
-| `ck items read "id:pages"` | Read specific pages |
+## Requirements
 
-## Troubleshooting
+A CandleKeep account — [create one free](https://www.getcandlekeep.com/sign-up) and
+upload a few documents. The plugins read whatever is in your account. The free tier
+covers 20 items and 500 reads per month.
 
-### "Command not found: ck"
-The CLI isn't installed. Follow the installation steps above.
+## Permissions
 
-### "Not authenticated"
-Run `ck auth login` to authenticate with CandleKeep Cloud.
+The Cowork connector requests four scopes, revocable anytime from your
+[settings page](https://www.getcandlekeep.com/settings):
 
-### "No items found"
-Your library is empty. Add documents with `ck items add <file.pdf>` or upload at [getcandlekeep.com](https://www.getcandlekeep.com).
+- `library:read` — list, search and read your items and their tables of contents
+- `library:write` — create and edit markdown items, enrich metadata
+- `marketplace:read` — browse community-published listings
+- `marketplace:write` — subscribe to listings (counts against your plan's item limit)
 
-### Plugin not found
-1. Verify marketplace is added: `/plugin marketplace list`
-2. Re-add if needed: `/plugin marketplace add CandleKeepAgents/candlekeep-marketplace`
-3. Install plugin: `/plugin install candlekeep-cloud@candlekeep`
+## Try it
 
-## Links
+Once installed, talk to Claude normally — the skill activates from natural language,
+no slash command needed:
 
-- [CandleKeep Cloud](https://www.getcandlekeep.com) - Web app and document upload
-- [CLI on crates.io](https://crates.io/crates/candlekeep-cli) - Rust package
-- [CLI Repository](https://github.com/CandleKeepAgents/candlekeep-cloud/tree/main/apps/cli) - Source code
-- [CandleKeep GitHub](https://github.com/CandleKeepAgents) - Organization
+- *"What does my library say about Rust async?"* — searches, reads the relevant pages, cites them.
+- *"Find me a book on Verilog and add it."* — browses the marketplace, subscribes to the best match, then reads it.
+- *"Draft a knowledge doc on our incident-response runbook."* — creates a markdown document you can iterate on.
+
+## Documentation
+
+- Cowork / Desktop install guide: <https://www.getcandlekeep.com/help/cowork>
+- All install paths: <https://www.getcandlekeep.com/install>
+- Developers (API keys, MCP endpoint): <https://www.getcandlekeep.com/developers>
+
+## Support
+
+Email <support@getcandlekeep.com> or open a ticket at
+<https://www.getcandlekeep.com/support>. Include what you asked Claude and what it
+answered — that's usually enough to reproduce.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT. See [LICENSE](./LICENSE).

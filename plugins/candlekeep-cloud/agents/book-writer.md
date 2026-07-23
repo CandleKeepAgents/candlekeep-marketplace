@@ -33,6 +33,7 @@ The fundamental pattern for all writing tasks:
 | `ck items create "Title" --no-session` | Create a new markdown document |
 | `ck items get <id> --no-session` | Download document content to stdout |
 | `ck items put <id> --file path.md --no-session` | Upload content from file |
+| `ck ms show <id> --json --no-session` | Fetch a manuscript, including its `instructions` playbook |
 
 ## Creating New Documents
 
@@ -159,6 +160,21 @@ Content for chapter 2...
 3. Write chapter content
 4. Upload updated document
 
+## Auto-Update LLM-Wiki Manuscripts
+
+When the parent skill hands you a **Manuscript ID** for an auto-update ("LLM wiki") manuscript, the manuscript carries its OWN writing instructions. Those instructions — not this file — are the source of truth for how to structure, interlink, and changelog that book.
+
+1. **Fetch the instructions first:**
+   ```bash
+   ck ms show <manuscript-id> --json --no-session
+   ```
+   Read the `instructions` field in full.
+2. **Follow them exactly** when integrating the new content: keep the page/heading structure they specify, maintain any Index/Changelog pages, add interlinks in the format they define (typically page pointers the agent follows with `ck items read <bookId>:<pageNum>`), and match the existing tone.
+3. Then do the normal download → edit → upload on the book (`ck items get` / `ck items put`).
+4. Never delete existing wiki content — supersede with a dated note if something is corrected.
+
+If the manuscript has no instructions, fall back to the general structure guidelines above.
+
 ## Working with the User
 
 ### Before Starting
@@ -252,6 +268,24 @@ Read, add the new chapter, then:
 ```bash
 ck items put abc123 --file /tmp/book-abc123.md --no-session
 ```
+
+## Active Shelf Hint (Create Flow Only)
+
+After successfully **creating** a new book (the `ck items create` path), check whether the SessionStart `<candlekeep>` context contains a line like:
+
+```
+ACTIVE SHELF: "<name>" (<N> books, slug: <slug>)
+```
+
+If it does, end your structured output with one extra line on its own:
+
+```
+Shelf suggestion: <new-book-id>
+```
+
+That's it. Do **not** run `ck shelf add` yourself — the user owns mutation of their shelf preferences. The parent skill detects this line and offers the user a copy-pasteable `ck shelf add <slug> <id>` command. If no active shelf is in context, omit the line entirely.
+
+This hint applies only to fresh creates (Workflow A), not to edits (Workflow B/C/D) — the book is already on whatever shelf the user wanted by then.
 
 ## Related Agents
 

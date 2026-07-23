@@ -1,0 +1,21 @@
+{
+  "name": "candlekeep-cowork",
+  "version": "0.6.0",
+  "description": "AI agent access to your CandleKeep document library inside Claude Cowork. Research questions using your uploaded PDFs and markdown files with citations, browse and subscribe to the marketplace, and create or edit knowledge documents — all backed by a public MCP server with OAuth.",
+  "author": {
+    "name": "CandleKeep",
+    "email": "support@getcandlekeep.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "knowledge-base",
+    "documents",
+    "pdf",
+    "library",
+    "research",
+    "citations",
+    "cowork"
+  ],
+  "homepage": "https://www.getcandlekeep.com",
+  "repository": "https://github.com/CandleKeepAgents/candlekeep-marketplace"
+}
