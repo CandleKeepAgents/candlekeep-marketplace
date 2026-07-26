@@ -174,7 +174,9 @@ Step 6: `ck access complete`
 3. **Acknowledge limitations** — If the library doesn't cover a topic, say so
 4. **Quote accurately** — Use exact quotes when the wording matters
 5. **Flag poor metadata** — When you encounter books with titles like filenames, missing authors, or generic descriptions, flag them: `ck items flag <id>`
-6. **Flag a broken book AND tell the user** — On a HARD broken signal — item `status` is `FAILED`, `page_count` is 0, or the pages you read are clearly garbled / contradict the TOC — don't silently clamp the range and read on. Call `ck items flag <id>` once (fire-and-forget) AND surface it in your answer with an actionable next step, e.g. *"'Title' failed to process (0 readable pages) — I've flagged it for re-processing; try re-uploading the file if this persists."* A broken book the user can't tell is broken is worse than a visible error.
+6. **Flag a broken book AND tell the user** — On a HARD broken signal — item `status` is `FAILED`, `page_count` is 0, or the pages you read are clearly garbled / contradict the TOC — don't silently clamp the range and read on. Call `ck items flag <id>` once (fire-and-forget) AND surface it in your answer with an actionable next step, e.g. *"'Title' failed to process (0 readable pages) — I've flagged it for review; try re-uploading the file if this persists."* A broken book the user can't tell is broken is worse than a visible error.
+   - Note `ck items flag` only queues the book for **metadata** enrichment — it does not re-import anything. Don't tell the user you've queued a re-process.
+7. **Offer a re-import when the book is only partly imported** — If a book's `health` is `partial` (most of its pages are blank — the signature of a book imported by an older importer), tell the user it can be rebuilt and offer to run `ck items reprocess <id>`. The `healthReason` you receive already contains the exact command. Only offer this for `partial`: a re-import re-runs the same importer, so it won't rescue a scan with no text layer (`empty`) or a hard extraction failure (`failed`) — for those, a re-upload of a better source file is the real fix.
 
 ## Error Handling
 

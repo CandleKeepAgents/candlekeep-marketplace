@@ -43,6 +43,10 @@ candlekeep:list_items
 
 Returns every item the user can access with `id`, `title`, `author`, `description`, `sourceType`, `status`, `pageCount`, `needsEnrichment`, `enrichmentConfidence`, `isSubscribed`, `proOnly`, `isWeeklyFeatured` — plus an `enrichmentQueue`.
 
+Each returned item carries a `health` field (`"ok" | "failed" | "empty" | "partial" | "stuck" | "needs_confirmation"`) and a `healthReason` string explaining any non-`ok` state.
+
+**Health note (only on a hard signal).** While building the reading list, if a book you'd surface — or one clearly relevant to the task — has `health != "ok"`, add ONE short, actionable note about it in your `## Reading List` output, e.g. `⚠ "Title" failed to process — <healthReason>`. One short line per affected book. Stay silent when every relevant book is healthy — never list health for books you wouldn't otherwise mention. Never recommend an unreadable book: note it and pick another.
+
 **List, don't search.** See everything, then decide relevance yourself. `search_items` is a plain case-insensitive substring match over title/description/author — it will miss a book called *Designing Data-Intensive Applications* when the user asked about "database replication". Only fall back to:
 
 ```
@@ -50,17 +54,6 @@ candlekeep:search_items { query: "<topic phrase>" }
 ```
 
 when `list_items` returns so many items that scanning them all is impractical. If you do, run it 2-3 times with different phrasings (topic, synonym, likely author) — one substring query is not a search.
-
-**Health note (only on a hard signal).** `list_items` has no single `health` field; derive it:
-
-| Signal | Meaning | Note to emit |
-|---|---|---|
-| `status: "FAILED"` | processing failed — no readable pages | `⚠ "Title" failed to process — the file couldn't be parsed; re-upload it to make it readable.` |
-| `pageCount: 0` (with `status: "READY"`) | empty book | `⚠ "Title" has no readable pages yet — nothing to read from it.` |
-| `status: "PROCESSING"` / `"DRAFT"` | still ingesting | `⚠ "Title" is still processing — it won't be readable for a few minutes.` |
-| `needsEnrichment: true` and empty TOC | metadata is thin | mention only if it forces you to recommend a wide page range |
-
-Emit a note ONLY for a book that is clearly relevant to the task — one short, actionable line per affected book, inside your `## Reading List` output. Stay silent when every relevant book is healthy. Never list health for books you wouldn't otherwise mention, and never recommend an unreadable book on the reading list — note it and pick another.
 
 ### Step 3 — Browse the marketplace
 

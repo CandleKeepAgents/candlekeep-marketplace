@@ -56,7 +56,7 @@ Claude Code gives you full task context — what the user wants, what technologi
 ck items list --json --no-session
 ```
 
-Returns all books in the user's library with: `id`, `title`, `author`, `description`, `pageCount`, TOC entries, plus a `health` field (`"ok" | "failed" | "empty" | "stuck" | "needs_confirmation"`) and a `healthReason` string explaining any non-`ok` state.
+Returns all books in the user's library with: `id`, `title`, `author`, `description`, `pageCount`, TOC entries, plus a `health` field (`"ok" | "failed" | "empty" | "partial" | "stuck" | "needs_confirmation"`) and a `healthReason` string explaining any non-`ok` state.
 
 **Health note (only on a hard signal).** While building the reading list, if a book you'd surface — or one clearly relevant to the task — has `health != "ok"`, add ONE short, actionable note about it in your output, e.g. `⚠ "Title" failed to process — <healthReason>`. One note per affected book, only when it's relevant to the task. Stay silent when every relevant book is healthy — never list health for books you wouldn't otherwise mention.
 

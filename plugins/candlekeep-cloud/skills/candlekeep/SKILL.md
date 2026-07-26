@@ -344,6 +344,8 @@ If all three are true for a manuscript, act. If not, stay silent.
 - **Marked `[auto-update]`** → it's an auto-maintained LLM wiki. Do NOT show a proposal. Write the addition directly (see "Auto-update manuscripts" below), then post a one-line notice.
 - **No `[auto-update]` marker** → the default flow: present a proposal and wait for confirmation.
 
+A separate `[wiki]` marker identifies the seeded general wiki (as opposed to a manuscript the user created for one topic). It changes nothing about how you write — it is only read by the offer gate at the end of this section.
+
 **Proposal format (non-auto-update only):**
 
 ```
@@ -385,8 +387,12 @@ Manuscript ID: {the [ms:...] value from the manuscript listing}
 Book ID: {the [book:...] value from the manuscript listing}
 Insight to add: {the full insight from this session}
 
-FIRST run `ck ms show {id} --json --no-session` and FOLLOW that manuscript's `instructions` exactly (structure, changelog, interlinks, tone). Then download the book, integrate the insight, and upload."
+FIRST run `ck ms show {id} --json --no-session` and FOLLOW that manuscript's `instructions` exactly (structure, changelog, interlinks, tone). Then download the book, integrate the insight, and upload.
+
+When you report back, also state how many distinct entries the book already contained BEFORE your addition and roughly how many topics they span."
 ```
+
+The entry count in the book-writer's report is the only signal you need for the offer below — it comes from a book the agent already downloaded, so never spend session-start context bytes on it.
 
 If the listing has no [ms:...] marker (older hook), run `ck ms list --active --json` and match the manuscript by its book ID — `ck ms show` also accepts the book ID as a fallback.
 
@@ -398,6 +404,40 @@ After book-writer returns, post exactly one line to the user (not a proposal box
 
 The write is reversible from version history, so no confirmation is needed. Still only once per manuscript per session, still only at task completion.
 
+### Offering a dedicated manuscript — rare, at most once per session
+
+The LLM wiki is a general catch-all. Once it has proven itself, a session occasionally produces an insight that is **strongly topic-scoped** — it belongs to one named project, framework, or domain rather than to the user's general knowledge. That is the one moment where it is genuinely useful, rather than a pitch, to mention that a second, dedicated manuscript is possible.
+
+**SHOW** only when ALL of these hold:
+1. The session context carries the line `Plan: Personal` — the user is on the free plan, so an extra manuscript is genuinely something they don't have. The hook emits this line for free accounts only.
+2. The manuscript you wrote to carries the `[wiki]` marker in the `MANUSCRIPTS` listing — it is the seeded general wiki. A manuscript without that marker is already a dedicated one; offering its owner a dedicated manuscript is nonsense.
+3. You wrote to the wiki this session — the one-line notice above just went out.
+4. The wiki has clearly accumulated real content: the book-writer reports it already held roughly 5+ distinct entries before your addition, spanning more than one topic. A fresh or near-empty wiki never qualifies, and neither does a wiki that is still all one subject.
+5. The insight you added is strongly topic-scoped — a specific project, framework, or domain, not general engineering knowledge.
+6. You have not already made this offer in this session.
+7. Your response contains no other upgrade surface. The Professional Upgrade Block is the higher-priority one: if both would apply, render that block and stay silent here.
+
+**SKIP** in every other case. Silence is the correct default, and this offer will correctly almost never fire.
+
+**Gates 1 and 2 fail closed.** If `Plan: Personal` is absent, the account is either a Professional subscriber — who already has unlimited manuscripts and must never be pitched one — or the plan could not be read at all (older CLI, hook failure). If the `[wiki]` marker is absent, either the manuscript isn't the seeded wiki or the hook is too old to say. In all four cases the answer is silence. Never infer the plan or the wiki's identity from anything else — not from the book count, not from the manuscript's title, not by running a `ck` command to look it up. If the signal isn't in the context, the offer does not exist.
+
+Format — one extra line appended to the auto-update notice at task completion. No box, no proposal, no question:
+
+```
+📝 Added to your LLM wiki "{title}": {one-sentence summary of what was added}
+   Your wiki has a real run of {topic} entries now — a dedicated manuscript would keep
+   {topic} in its own book instead of mixed into the general wiki. Extra manuscripts come
+   with Professional: https://getcandlekeep.com/billing
+```
+
+Phrase it as **extending something the user already values**: their wiki is working, and this gives one topic its own home. Never phrase it as unlocking something withheld, never suggest the wiki is deficient, and never imply the wiki will stop being maintained.
+
+It is an **offer, not an action**. Never create a manuscript on your own. If — and only if — the user asks for it, run `ck ms create "{title}" --topics "..." --criteria "..." --auto-update --no-session` and show what the CLI prints; if the plan doesn't allow another manuscript, the CLI's own message explains that. Do not pre-empt or paraphrase it.
+
+Never nag. If the user doesn't take it up, drop it — this is a one-time offer, not a recurring one. You cannot see earlier sessions, so treat any doubt about whether it has already been made as a reason to stay silent.
+
+**Why this restraint is load-bearing — do not tune it down later:** this surface exists in this shape because a user complained about being asked something every single session. Prompting is a channel that rots with overuse. Duolingo, who measure this more carefully than almost anyone, ship notifications at roughly one added daily-active user per 3.6–30 sends, and killed an experiment that was measurably net-positive at 1-per-130 because the cost to the channel outweighed the gain. An offer that fired every session would be far worse than 1-per-130 and would destroy the very notice it rides on. The gates above are not politeness — they are what keeps the offer worth anything the one time it fires.
+
 **What NOT to do:**
 - Don't show a proposal box for an `[auto-update]` manuscript — write directly and post the one-line notice
 - Don't skip `ck ms show` for an auto-update manuscript — its instructions are the source of truth for how to write it
@@ -405,6 +445,9 @@ The write is reversible from version history, so no confirmation is needed. Stil
 - Don't propose if the session was just reading/research with no new insights
 - Don't propose multiple additions to the same manuscript in one session — pick the best one
 - Don't interrupt the user mid-task — only propose at task completion
+- Don't offer a dedicated manuscript on a fresh, near-empty, or single-topic wiki, or more than once in a session, or alongside another upgrade surface
+- Don't offer a dedicated manuscript without a `Plan: Personal` line in context (Professional subscribers already have unlimited manuscripts) or for a manuscript lacking the `[wiki]` marker — and never go looking for either signal yourself
+- Don't run `ck ms create` unless the user explicitly asked for it — the offer above is a sentence, not an action
 - If no MANUSCRIPTS section exists in context, skip entirely
 
 ## Citation Block
@@ -507,7 +550,7 @@ Format (mirror the Citation Block's 60-wide style; substitute the bracketed valu
 
 The offer to **redo the answer with the full book** is the point — it's a real, deliverable promise (after upgrade, the next read returns full content live). Keep it; don't soften it to a passive "learn more" link.
 
-This block is the ONLY upgrade surface — do not also echo the reader's raw `Upgrade to CandleKeep Professional…` line or the librarian's reading-list upgrade line. One contextual moment, not a repeated pitch.
+**One upgrade surface per response, and this block outranks the others.** Do not also echo the reader's raw `Upgrade to CandleKeep Professional…` line, the librarian's reading-list upgrade line, or the dedicated-manuscript offer from "Manuscripts — Knowledge Base Curation". If this block applies, it is the only one you render. One contextual moment, not a repeated pitch.
 
 ## Surfacing Book Updates
 

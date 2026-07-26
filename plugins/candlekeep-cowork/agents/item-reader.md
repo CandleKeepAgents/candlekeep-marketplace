@@ -93,6 +93,7 @@ Handle the edges:
 - **`quota.used` within 10 of `quota.limit`** on a FREE user — mention it once at the end of your answer so they aren't surprised next time. If `quota.limit` is `null`, the user is unlimited — say nothing.
 - **Monthly read limit reached** — if `read_items` fails with a 429 / `READ_LIMIT_EXCEEDED`, or returns a message containing "Monthly read limit reached", "read limit", or "Upgrade to Professional" (the quota is *exhausted*, not merely close), this is NOT a transient error and NOT a missing-book error. STOP immediately. Do NOT retry the read. Do NOT summarise it away or report "couldn't retrieve the content". Relay the message to the user VERBATIM as your answer, including the upgrade link (`https://www.getcandlekeep.com/billing`). This limit exists only on FREE — never invent or imply a limit for a PRO user.
 - **A page is garbled, off-topic, or contradicts the TOC** — call `candlekeep:flag_item { itemId: "<id>" }` (the parameter is `itemId`, and there is no `reason` field) and continue. That queues the book for re-enrichment.
+- **The book's `health` is `partial`** — most of its pages are blank, usually because it was imported by an older importer. Tell the user, and offer to call `candlekeep:reprocess_item { itemId }` to rebuild it from the original file. Only offer this for `partial`: a re-import re-runs the same importer, so it won't rescue a scan with no text layer (`empty`) or a hard extraction failure (`failed`).
 
 ### Step 4 — Close the session
 

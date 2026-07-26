@@ -9,16 +9,23 @@
 # discovery — we only need the item count here, not the full book list.
 # Manuscripts are capped at 8 entries (~150 bytes each) to stay within budget.
 #
-# LATENCY: this hook runs on every session start AND every resume/compact. The two
-# data pulls (item count + manuscripts) are cached locally so resumes cost zero
-# network round-trips. Genuine new sessions (source=startup/clear) always refresh,
-# so new sessions never show stale data. The librarian agent does its own full book
-# discovery, so a long cache TTL is safe — the item count / manuscript list is
-# informational and changes rarely.
+# LATENCY: this hook runs on every session start AND every resume/compact. The item
+# count and manuscript list are cached locally so resumes cost zero network round-trips.
+# Genuine new sessions (source=startup/clear) always refresh, so new sessions never show
+# stale data. The librarian agent does its own full book discovery, so a long cache TTL
+# is safe — the item count / manuscript list is informational and changes rarely.
+#
+# The account tier is the one signal that is NEVER cached (see the tier_line block at the
+# bottom). It gates an upsell, so a stale value is worse than no value: a user who upgrades
+# mid-session would be pitched Professional for up to the cache TTL. It is fetched only on
+# the refresh path and simply omitted when we serve from cache — absence already means
+# silence, so a cache replay suppresses the offer instead of risking a wrong one. Do NOT
+# add a network call to the cached path; the point of the cache is that resumes are free.
 set -euo pipefail
 
-# Local cache of the two network payloads (raw JSON). Keyed globally (item count and
+# Local cache of the network payloads (raw JSON). Keyed globally (item count and
 # manuscripts are per-account, not per-directory). TTL is deliberately long — see above.
+# The tier is deliberately absent from this file.
 CACHE_FILE="$HOME/.candlekeep/session-cache.json"
 CONFIG_FILE="$HOME/.candlekeep/config.toml"
 CACHE_TTL=86400       # seconds (24h); only governs resume/compact — startup always refreshes
@@ -26,8 +33,8 @@ CK_FETCH_TIMEOUT=6    # hard per-call cap on the ck network fetches (< the 10s h
 
 # Single cleanup for every temp file we may create, set once so later `trap ... EXIT`
 # calls can't clobber an earlier one.
-items_tmp=""; ms_tmp=""; cache_tmp=""; shelf_tmp=""
-_ck_cleanup() { rm -f "$items_tmp" "$ms_tmp" "$cache_tmp" "$shelf_tmp" 2>/dev/null || true; }
+items_tmp=""; ms_tmp=""; who_tmp=""; cache_tmp=""; shelf_tmp=""
+_ck_cleanup() { rm -f "$items_tmp" "$ms_tmp" "$who_tmp" "$cache_tmp" "$shelf_tmp" 2>/dev/null || true; }
 trap _ck_cleanup EXIT
 
 # True only for a strictly-positive integer — used to sanity-check epoch timestamps
@@ -63,6 +70,7 @@ hook_source=$(printf '%s' "$input" | jq -r '.source // ""' 2>/dev/null) || hook_
 # ---------------------------------------------------------------------------
 items_json=""
 ms_json="null"
+who_json="null"
 need_refresh=1
 
 case "$hook_source" in
@@ -86,6 +94,10 @@ case "$hook_source" in
         if [ -n "$c_items" ] && [ "$c_items" != "null" ]; then
           items_json="$c_items"
           ms_json="$c_ms"
+          # who_json is deliberately left null on this path — the tier is never
+          # replayed from cache, so the plan line is omitted (= silence) rather
+          # than risking a stale pitch at a user who upgraded mid-session.
+          # A `who_json` key left behind by an older plugin version is ignored.
           need_refresh=0
         fi
       fi
@@ -94,23 +106,40 @@ case "$hook_source" in
 esac
 
 if [ "$need_refresh" -eq 1 ]; then
-  # Fetch both payloads concurrently — cold start is max(items, ms), not the sum.
+  # Fetch all payloads concurrently — cold start is max(items, ms, whoami), not the sum.
+  # `ck auth whoami` is the only call that reports the account tier (items/ms/shelf
+  # responses carry none), and it is the cheapest one — a single User row. It rides
+  # along with the other two so it costs no extra wall-clock time, and every failure
+  # mode (old CLI, 401, timeout) just leaves who_json as null.
   items_tmp=$(mktemp -t ck-items.XXXXXX 2>/dev/null || true)
   ms_tmp=$(mktemp -t ck-ms.XXXXXX 2>/dev/null || true)
+  who_tmp=$(mktemp -t ck-who.XXXXXX 2>/dev/null || true)
   if [ -n "$items_tmp" ] && [ -n "$ms_tmp" ]; then
     _with_timeout "$CK_FETCH_TIMEOUT" ck items list --json >"$items_tmp" 2>/dev/null &
     pid_items=$!
     _with_timeout "$CK_FETCH_TIMEOUT" ck ms list --active --json >"$ms_tmp" 2>/dev/null &
     pid_ms=$!
+    pid_who=""
+    if [ -n "$who_tmp" ]; then
+      _with_timeout "$CK_FETCH_TIMEOUT" ck auth whoami --json --no-session >"$who_tmp" 2>/dev/null &
+      pid_who=$!
+    fi
     set +e
     wait "$pid_items"; items_rc=$?
     wait "$pid_ms"; ms_rc=$?
+    who_rc=1
+    [ -z "$pid_who" ] || { wait "$pid_who"; who_rc=$?; }
     set -e
     items_json=$(cat "$items_tmp" 2>/dev/null) || items_json=""
     ms_json=$(cat "$ms_tmp" 2>/dev/null) || ms_json="null"
     [ "$ms_rc" -eq 0 ] || ms_json="null"
+    if [ "$who_rc" -eq 0 ]; then
+      who_json=$(cat "$who_tmp" 2>/dev/null) || who_json="null"
+    fi
   else
-    # No temp files available — degrade to sequential fetch.
+    # No temp files available — degrade to sequential fetch. The tier probe is
+    # dropped entirely here rather than serialised onto the startup path; an
+    # absent tier only costs a suppressed offer, never correctness.
     items_json=$(_with_timeout "$CK_FETCH_TIMEOUT" ck items list --json 2>/dev/null) || items_json=""
     ms_json=$(_with_timeout "$CK_FETCH_TIMEOUT" ck ms list --active --json 2>/dev/null) || ms_json="null"
     items_rc=0
@@ -127,10 +156,13 @@ fi
 item_count=$(printf '%s' "$items_json" | jq '.items | length' 2>/dev/null) || exit 0
 [[ "$item_count" =~ ^[0-9]+$ ]] || exit 0
 
-# Normalise ms payload to valid JSON or the literal null (manuscripts are optional).
+# Normalise ms / whoami payloads to valid JSON or the literal null (both optional).
 if ! printf '%s' "$ms_json" | jq -e . >/dev/null 2>&1; then ms_json="null"; fi
+if ! printf '%s' "$who_json" | jq -e . >/dev/null 2>&1; then who_json="null"; fi
 
 # Persist the refreshed payloads (atomic write) so the next resume/compact is free.
+# who_json is intentionally NOT persisted — a tier that only ever lives in this
+# process can never be served stale, whatever a later edit to the read path does.
 if [ "$need_refresh" -eq 1 ]; then
   cache_dir="$HOME/.candlekeep"
   if [ -d "$cache_dir" ]; then
@@ -191,15 +223,18 @@ ms_count=$(printf '%s' "$ms_json" | jq '.manuscripts | length' 2>/dev/null) || m
 if [ "${ms_count:-0}" -gt 0 ] 2>/dev/null; then
   # Cap at 8 manuscripts to stay under 2KB total
   max_display=8
-  # Markers: [auto-update] = maintain silently at task completion (LLM wiki);
+  # Markers: [wiki] = the seeded general LLM wiki (Manuscript.isSystem, already
+  # exposed by `ck ms list --json`) as opposed to a user-created, already-dedicated
+  # manuscript; [auto-update] = maintain silently at task completion;
   # [has-instructions] = the manuscript carries a writing playbook to fetch
   # with `ck ms show <id>`. Full instructions are intentionally NOT inlined
   # here to stay within the ~2KB context budget.
   ms_listing=$(printf '%s' "$ms_json" | jq -r --argjson max "$max_display" '
     [.manuscripts[] | select(.itemId != null)][:$max] | map(
+      (if .isSystem then " [wiki]" else "" end) as $sys |
       (if .autoUpdate then " [auto-update]" else "" end) as $au |
       (if ((.instructions // "") | length) > 0 then " [has-instructions]" else "" end) as $hi |
-      "- \(.title)\($au)\($hi) [ms:\(.id)] [book:\(.itemId)]\n  Topics: \(.topics | join(", "))\n  Criteria: \(.criteria | join(", "))"
+      "- \(.title)\($sys)\($au)\($hi) [ms:\(.id)] [book:\(.itemId)]\n  Topics: \(.topics | join(", "))\n  Criteria: \(.criteria | join(", "))"
     ) | join("\n")
   ' 2>/dev/null) || ms_listing=""
 
@@ -249,9 +284,27 @@ PLAN MODE DIRECTIVE: When you enter plan mode (designing features, architecture,
     ;;
 esac
 
+# Account tier — the only signal that lets the skill avoid pitching Professional at
+# someone who already pays for it. Emitted ONLY for the free tier, and as one short
+# token, because the ~2KB preview budget above is the binding constraint: 15 bytes on
+# a Personal account, zero on a Professional one. (Unrelated to `plan_mode` above —
+# that is the plan-mode trigger setting.) Absence is deliberately ambiguous between
+# "Professional", "served from cache" and "couldn't tell", and the skill treats all
+# of them as silence.
+#
+# FRESH-ONLY BY CONSTRUCTION: who_json is non-null only when this run took the refresh
+# path (a live `ck auth whoami` this invocation). It is never read from, nor written to,
+# the cache — so the line can never outlive the upgrade that invalidates it. A user who
+# upgrades mid-session gets silence on every subsequent resume/compact, and the truth on
+# their next new session. Never relax this into "cache the tier with a shorter TTL": any
+# window at all is a window in which we pitch Professional to a paying subscriber.
+tier=$(printf '%s' "$who_json" | jq -r '.tier // empty' 2>/dev/null) || tier=""
+tier_line=""
+if [ "$tier" = "FREE" ]; then tier_line="Plan: Personal"$'\n'; fi
+
 context="<candlekeep>
 CandleKeep is active. You have ${item_count} books in your library.
-${plan_directive}${shelf_section}${ms_section}</candlekeep>"
+${tier_line}${plan_directive}${shelf_section}${ms_section}</candlekeep>"
 
 # Output JSON in the format Claude Code expects for SessionStart hooks
 jq -n --arg ctx "$context" '{

@@ -29,7 +29,7 @@ The `subagent_type` is the agent's frontmatter `name`. If your host namespaces p
 
 ## Environment — Cowork has no shell
 
-Every CandleKeep action is an MCP tool call against the `candlekeep` MCP server: `whoami`, `library_summary`, `list_items`, `search_items`, `get_table_of_contents`, `read_items`, `get_item_content`, `put_item_content`, `create_markdown_item`, `enrich_item`, `flag_item`, `start_access_session`, `complete_access_session`, `browse_marketplace`, `subscribe_marketplace`, `report_gap`, `suggest_book`. There is no `ck` CLI, no bash, no filesystem — not for you and not for the agents. Never propose one.
+Every CandleKeep action is an MCP tool call against the `candlekeep` MCP server: `whoami`, `library_summary`, `list_items`, `search_items`, `get_table_of_contents`, `read_items`, `get_item_content`, `put_item_content`, `create_markdown_item`, `enrich_item`, `flag_item`, `start_access_session`, `complete_access_session`, `browse_marketplace`, `subscribe_marketplace`, `report_gap`, `suggest_book`, `reprocess_item`. There is no `ck` CLI, no bash, no filesystem — not for you and not for the agents. Never propose one.
 
 **Do not call the discovery or reading tools yourself.** `search_items`, `browse_marketplace`, `subscribe_marketplace`, `get_table_of_contents`, `read_items`, `start_access_session`, `complete_access_session`, `report_gap`, and `suggest_book` belong to the sub-agents. The only tool you call directly is `library_summary`, once, for orientation and manuscript context.
 
@@ -91,6 +91,8 @@ Fold the reader's `## Findings` into your answer, preserving its page citations.
 2. If the reader emitted a `🔒 Locked content` box, append the **Professional upgrade block** after it.
 
 **Librarian health notes.** If the librarian flagged a book with a line like `⚠ "Title" failed to process — <reason>`, pass that one line through to the user. It explains why an obviously relevant book contributed nothing.
+
+If that note says a book's `health` is `partial`, most of its pages are blank — usually a book imported by an older importer. Offer to call `candlekeep:reprocess_item { itemId }` to rebuild it from the original file; the book stays readable while that runs. Only offer it for `partial`. A re-import re-runs the same importer, so it won't rescue a scan with no text layer (`empty`) or a hard extraction failure (`failed`) — offering it there just wastes the user's time.
 
 **Read limit reached.** If the item-reader reports that the monthly read limit is exhausted ("Monthly read limit reached", "Upgrade to Professional"), that message *is* the answer. Relay it verbatim, including its upgrade link. Do not retry, do not re-spawn the reader, and do not report it as "couldn't retrieve the content".
 
