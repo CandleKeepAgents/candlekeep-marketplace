@@ -5,15 +5,10 @@
     "email": "support@getcandlekeep.com"
   },
   "metadata": {
-    "description": "CandleKeep gives your AI agents a library they can actually read. Install the Claude Code plugin or the Claude Cowork plugin to research your own PDFs and markdown documents with page-level citations, browse and subscribe to marketplace books, and write knowledge documents back to your library.",
-    "version": "2.0.0"
+    "description": "CandleKeep gives your AI agents a library they can actually read. Install the Cowork plugin to research your own PDFs and markdown documents with page-level citations, browse and subscribe to marketplace books, and write knowledge documents back to your library — all over a hosted MCP server, with no local CLI to install.",
+    "version": "3.0.0"
   },
   "plugins": [
-    {
-      "name": "candlekeep-cloud",
-      "source": "./plugins/candlekeep-cloud",
-      "description": "AI agent access to your CandleKeep Cloud document library in Claude Code. Spawns librarian, item-reader, book-writer and book-enricher sub-agents to research your books and answer with page-level citations, backed by the `ck` CLI."
-    },
     {
       "name": "candlekeep-cowork",
       "source": "./plugins/candlekeep-cowork",

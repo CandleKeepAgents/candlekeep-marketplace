@@ -1,6 +1,18 @@
 # Changelog
 
-## 0.5.0 — Real sub-agent orchestration
+## 0.6.1 — Directory-submission readiness
+
+- Example prompt 3 in the README asked the reader to create a knowledge doc called "Incident Response Runbook", which is also one of the books seeded into the review demo account — so anyone following the prompts verbatim would be told to create something that already existed. Renamed the prompt's target to "On-Call Escalation Policy", which no seeded book uses.
+- The marketplace catalog now lists only `candlekeep-cowork`. `candlekeep-cloud` is the Claude Code plugin and needs the `ck` CLI installed locally, so it cannot be exercised from Cowork or by a directory reviewer; it continues to ship through the webapp's `AgentSkill` table instead. The mirror workflow now refuses to publish a manifest that still advertises it.
+- Corrected the version heading below: the sub-agent orchestration release shipped as `0.6.0`, but its changelog entry was written under `0.5.0` — a version that never existed in `plugin.json`.
+- **Privacy:** the README now links the privacy policy, terms, security and subprocessor pages, and states plainly what is retained. Previously it asserted "not your Cowork conversation" without qualification; three tools do persist short agent-supplied free text (a research topic, an unanswered-question topic, a book-suggestion rationale), and those are now itemised with their retention limits. The same categories were added to the privacy policy's "What We Collect" section.
+- **`start_access_session` no longer accepts `itemIds`.** The parameter was declared and then silently discarded, while `item-reader.md` told the agent that listing item ids "is what scopes the session" — it scoped nothing. Removed from the tool schema, the shared type and both agent docs. `intent` is now documented as stored and reviewable, with an instruction to write subject matter only.
+- **`subscribe_marketplace` description rewritten** to say outright that it takes no payment and changes no plan. The verb reads as financial, and "financial transactions" is a prohibited category in the directory policy — the handler only grants an access row.
+- **`get_table_of_contents` no longer claims to consume the monthly read quota.** On the MCP path it does not: the quota is counted from `AccessLog`, which only the REST read routes write. The description is now silent on metering, which is accurate before and after that counter is wired up.
+- **Gap reports filed from Cowork are now secret-scrubbed.** The redaction pass for emails, API keys, tokens and phone-shaped numbers previously ran only on in-book gaps; the MCP tool can only file library gaps, so the one path a plugin user could reach was the only one storing raw text. Both paths scrub now.
+- **OAuth discovery metadata points at pages that exist.** `resource_documentation` advertised `/cowork-plugin`, which 404s (verified against production); it now points at `/help/cowork`, and the metadata additionally advertises the privacy policy and terms.
+
+## 0.6.0 — Real sub-agent orchestration
 
 - The `candlekeep` skill is now a pure delegation layer instead of an inlined nine-step workflow. It calls `library_summary` once for orientation and then spawns the four sub-agents that already shipped in the zip: `librarian` (library + marketplace discovery, subscriptions, gap reporting), `item-reader` (targeted reads and cited findings), `book-writer` (create/edit/manuscript updates) and `book-enricher` (opportunistic metadata backfill). This gives Cowork parity with the Claude Code plugin, which has always fanned out to sub-agents.
 - Registered `candlekeep-cowork` in the repo-root `.claude-plugin/marketplace.json` so the plugin is installable in a single step from Claude Desktop's *Customize → Plugins* panel — skill, sub-agents and the MCP connector all arrive together.

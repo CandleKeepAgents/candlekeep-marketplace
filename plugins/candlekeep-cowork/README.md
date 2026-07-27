@@ -72,7 +72,7 @@ The librarian browses community-published listings, subscribes to the best match
 
 **3. Write or update a knowledge document**
 
-> Draft a knowledge doc called "Incident Response Runbook" covering our on-call rotation, severity levels, and the postmortem template. Then add a section on paging escalation.
+> Draft a knowledge doc called "On-Call Escalation Policy" covering our rotation, severity levels, and the postmortem template. Then add a section on paging escalation.
 
 The book-writer creates the markdown item in your library, then edits it in place on the follow-up. Every save is versioned, so nothing is overwritten irrecoverably.
 
@@ -112,9 +112,21 @@ If you hit a limit, the plugin says so in one line and links to `/billing`. It n
 
 ## Privacy
 
-All traffic goes to `https://www.getcandlekeep.com/api/v1/mcp` over TLS. We see the explicit tool calls the plugin makes — searches, reads, writes — not your Cowork conversation. Tokens are stored hashed at rest and bound to this specific resource (RFC 8707), so a stolen token can't be replayed against another MCP server.
+**Full privacy policy: <https://www.getcandlekeep.com/privacy>** · [Terms](https://www.getcandlekeep.com/terms) · [Security](https://www.getcandlekeep.com/security) · [Subprocessors](https://www.getcandlekeep.com/subprocessors)
 
-Reader-gap signals sent to book authors are abstracted topics only ("missing: testbench randomisation"), never your question text and never anything identifying you.
+All traffic goes to `https://www.getcandlekeep.com/api/v1/mcp` over TLS. Tokens are stored hashed at rest and bound to this specific resource (RFC 8707), so a stolen token can't be replayed against another MCP server.
+
+**We store no transcript of your Cowork conversation** — no prompt stream, no turns, no message history. What we do keep is the tool calls themselves plus three short pieces of free text the agent supplies, all of which you can see it write:
+
+| What | Written by | Why we keep it | Limit |
+|---|---|---|---|
+| A one-line research topic | `start_access_session` | Groups a run of reads into one session | 500 chars |
+| An unanswered-question topic | `report_gap` | So we know which book to publish next, and can tell you when it exists | 1000 chars |
+| A book-suggestion rationale | `suggest_book` | De-duplicates suggestions | 1000 chars |
+
+The agents are instructed to write subject matter only ("backpressure in async Rust"), never your verbatim question. Independently of that, the server redacts recognisable emails, API keys, access tokens and phone numbers from **all three** of the above before storing them — the same redaction pass runs on every writer, so the guarantee does not depend on the agent behaving.
+
+Reader-gap signals shown to a book's author are abstracted topics only ("missing: testbench randomisation"), never your question text and never anything identifying you.
 
 ---
 

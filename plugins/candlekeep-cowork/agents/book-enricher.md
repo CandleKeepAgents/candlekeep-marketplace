@@ -45,7 +45,7 @@ Otherwise continue.
 ### Step 2 — Read the front of the book
 
 ```
-candlekeep:start_access_session { intent: "metadata enrichment", itemIds: ["<id>"] }
+candlekeep:start_access_session { intent: "metadata enrichment" }
 candlekeep:read_items { items: [{ id: "<id>", pages: "1-10" }] }
 ```
 

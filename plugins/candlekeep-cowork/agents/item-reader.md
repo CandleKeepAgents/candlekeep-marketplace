@@ -30,12 +30,13 @@ You will be given exactly three things:
 
 ```
 candlekeep:start_access_session {
-  intent: "<the RESEARCH_INTENT line from your prompt>",
-  itemIds: ["<id1>", "<id2>"]
+  intent: "<the RESEARCH_INTENT line from your prompt>"
 }
 ```
 
-Returns a `sessionId` you keep until Step 4. Listing every item id up front is what scopes the session.
+Returns a `sessionId` you keep until Step 4.
+
+**`intent` is stored on the session record and may be reviewed.** Write the subject matter only — "backpressure in async Rust", not the user's verbatim question — and never include names, credentials, tokens, file paths or anything else identifying.
 
 ### Step 2 — Confirm page ranges (only if you weren't given any)
 
