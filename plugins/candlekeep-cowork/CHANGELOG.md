@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.0 — Citation block toggle
+
+- The end-of-response CandleKeep citation box can now be turned off per user from the webapp's Settings page (or `ck config set skill.citationBlock off`). Cowork's SKILL.md ships frozen in the uploaded zip, so the live MCP server is the delivery channel: when the setting is off, `read_items` / `get_item_content` results carry a one-line `CITATION STYLE` notice, and the skill's citation-block rules gained a `SKIP always` clause keyed to it. Works for already-installed skill zips too, since the notice arrives in tool output. Inline `(Book Title, p. N)` citations are unaffected; the default (show) is unchanged.
+
 ## 0.6.1 — Directory-submission readiness
 
 - Example prompt 3 in the README asked the reader to create a knowledge doc called "Incident Response Runbook", which is also one of the books seeded into the review demo account — so anyone following the prompts verbatim would be told to create something that already existed. Renamed the prompt's target to "On-Call Escalation Policy", which no seeded book uses.
