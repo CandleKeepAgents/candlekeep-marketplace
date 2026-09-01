@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1 — Manuscript writes say the book is private
+
+- The proposal box carries a "Private to your account" line, the auto-update notice reads `(private to you)`, and Ask-mode writes post a one-line confirmation (CND-701). Mirrors the Claude Code plugin 1.31.1 change.
+
 ## 0.7.0 — Citation block toggle
 
 - The end-of-response CandleKeep citation box can now be turned off per user from the webapp's Settings page (or `ck config set skill.citationBlock off`). Cowork's SKILL.md ships frozen in the uploaded zip, so the live MCP server is the delivery channel: when the setting is off, `read_items` / `get_item_content` results carry a one-line `CITATION STYLE` notice, and the skill's citation-block rules gained a `SKIP always` clause keyed to it. Works for already-installed skill zips too, since the notice arrives in tool output. Inline `(Book Title, p. N)` citations are unaffected; the default (show) is unchanged.

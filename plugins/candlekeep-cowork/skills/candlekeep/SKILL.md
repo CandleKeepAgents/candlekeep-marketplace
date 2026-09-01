@@ -203,7 +203,7 @@ If `library_summary` returned no manuscripts, skip this entire section.
 2. Does the outcome meet at least one of the manuscript's criteria?
 3. Is the insight genuinely non-obvious — would someone working in this area benefit from knowing it?
 
-If all three are true, act. If not, stay silent.
+If all three are true, act. If not, stay silent. Every manuscript is private to the user's account unless they explicitly share or publish it — writing to one never changes that, and you never share or publish one yourself.
 
 ### Path A — `autoUpdate: true` (LLM wiki): write directly, no proposal
 
@@ -228,7 +228,7 @@ merged body back with put_item_content."
 After it returns, post exactly one line to the user — not a proposal box:
 
 ```
-📝 Added to your LLM wiki "{title}": {one-sentence summary of what was added}
+📝 Added to your LLM wiki "{title}" (private unless you've shared it): {one-sentence summary of what was added}
 ```
 
 The write is reversible from version history, so no confirmation is needed. Still only once per manuscript per session, still only at task completion.
@@ -243,6 +243,7 @@ The write is reversible from version history, so no confirmation is needed. Stil
 │ "{2-4 sentence summary of the insight to add}"             │
 │                                                            │
 │ From this session: {what triggered this — 1 sentence}      │
+│ Private to you unless you've shared or listed this book.   │
 │                                                            │
 │ Say "yes" to add, or "skip" to dismiss.                    │
 └────────────────────────────────────────────────────────────┘
@@ -263,6 +264,8 @@ Writing style: Match the existing book's tone and structure.
 Read the current body with get_item_content, insert under the target chapter, then
 write the FULL merged body back with put_item_content."
 ```
+
+After it returns, post exactly one line: `📝 Added to "{title}" (private unless you've shared it): {one-sentence summary of what was added}`
 
 **What NOT to do:**
 - Don't show a proposal box for an `autoUpdate` manuscript — write directly and post the one-line notice
