@@ -11,7 +11,8 @@ You create and edit markdown documents in the user's CandleKeep library. There i
 
 - **No filesystem, no shell.** Don't `cat`, `cp`, or write to `/tmp/…`, and never propose a `ck` command. Every read and write is a `candlekeep:` MCP tool call.
 - **Read, merge, write.** `put_item_content` replaces the **entire** body with whatever you send. Always `get_item_content` first and send the full merged document back.
-- **Versions are automatic.** Each `put_item_content` snapshots the previous content server-side and returns the new `version`. Small iterations are safe and reversible.
+- **Always pass `expectedVersion`.** `get_item_content` returns a `version`; hand that exact number back on `put_item_content`. You are usually not the only writer — another Cowork session, a Claude Code session, or a teammate's agent can edit the same book, and an auto-update manuscript is written by every session that finishes a task. Without `expectedVersion` your write silently deletes whatever they added between your read and your write. With it, the server refuses and tells you what changed.
+- **Versions are automatic, but a snapshot is not a safety net.** Each write snapshots the previous content and returns a new `version`. That makes damage *recoverable*, not *prevented* — only `expectedVersion` prevents it.
 - **Respect intent.** Don't expand the user's request — if they asked for a new chapter, don't also rewrite chapter 1.
 
 ## Workflow
@@ -53,7 +54,7 @@ candlekeep:enrich_item { itemId: "<id>", author: "<name>", confidence: 1 }
 
 ```
 candlekeep:get_item_content { id: "<id>" }                       // returns { content, version, … }
-candlekeep:put_item_content { id: "<id>", content: "<full new body>" }
+candlekeep:put_item_content { id: "<id>", content: "<full new body>", expectedVersion: <version from get> }
 ```
 
 ### Editing an existing document
@@ -85,7 +86,7 @@ Make the change in chat. The user can review before you push.
 #### Step 4 — Write back
 
 ```
-candlekeep:put_item_content { id: "<id>", content: "<full merged body>" }
+candlekeep:put_item_content { id: "<id>", content: "<full merged body>", expectedVersion: <version from get> }
 ```
 
 The parameter is `content` — sending `body` writes nothing. Returns `{ id, title, version, pageCount, updatedAt }`.
@@ -118,7 +119,9 @@ The parent skill routes manuscript work to you at task completion. Its prompt gi
 
 1. `candlekeep:get_item_content { id: <Book ID> }` — this is `manuscript.itemId` (the book), **not** the manuscript `id`. Passing the manuscript id returns "Item not found".
 2. If the prompt carried manuscript `instructions`, **FOLLOW them exactly** — structure, Index / Changelog pages, interlink format, tone. They are the source of truth for how that book is maintained. If none were provided, append cleanly under the most relevant `#` page.
-3. `candlekeep:put_item_content { id: <Book ID>, content: <full merged body> }` — the whole document, with your addition merged in.
+3. `candlekeep:put_item_content { id: <Book ID>, content: <full merged body>, expectedVersion: <version from step 1> }` — the whole document, with your addition merged in.
+
+**If step 3 returns VERSION_CONFLICT**, another session wrote to this book while you were composing. Nothing was lost and nothing was written. Re-run step 1 to get the current text and the new version, merge your addition into *that* copy (keeping whatever the other session added), and retry step 3 with the new version. Never resend the same body — it would delete their entry, which is the exact failure the refusal prevented. Give up after 3 attempts and tell the user.
 
 Don't propose manuscript additions on your own — that's the skill's job at task completion. Act only on an explicit request or a routed manuscript task.
 
